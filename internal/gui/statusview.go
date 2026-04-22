@@ -10,6 +10,14 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
+func (gui *Gui) currentDynamicMode() DynamicViewMode {
+	v, err := gui.g.View(dynamicViewFeature.Name)
+	if err != nil {
+		return ""
+	}
+	return DynamicViewMode(v.Title)
+}
+
 // there is no AI, only too much if clauses
 func (gui *Gui) initFocusStat(r *git.Repository) error {
 	v, err := gui.g.View(dynamicViewFeature.Name)

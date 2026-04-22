@@ -41,7 +41,8 @@ func (gui *Gui) focusToRepository(g *gocui.Gui, v *gocui.View) error {
 	if r == nil {
 		return nil
 	}
-	if err := gui.renderRepositoryDetails(r); err != nil {
+	gui.State.detailRepoID = r.RepoID
+	if err := gui.renderRepositoryDetails(r, true); err != nil {
 		return err
 	}
 	targetViewName := commitViewFeature.Name

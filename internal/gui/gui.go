@@ -29,6 +29,7 @@ type guiState struct {
 	Queue         *job.Queue
 	FailoverQueue *job.Queue
 	targetBranch  string
+	detailRepoID  string
 	totalBranches []*branchCountMap
 }
 
@@ -89,7 +90,7 @@ var (
 	mergeMode    = mode{ModeID: MergeMode, DisplayString: "Merge", CommandString: "merge"}
 	checkoutMode = mode{ModeID: CheckoutMode, DisplayString: "Checkout", CommandString: "checkout"}
 
-	modes = []mode{fetchMode, pullMode, pushMode, mergeMode}
+	modes = []mode{fetchMode, pullMode, pushMode, mergeMode, checkoutMode}
 	// mainViews = []viewFeature{mainViewFeature, commitViewFeature, dynamicViewFeature, remoteViewFeature, remoteBranchViewFeature, branchViewFeature, stashViewFeature}
 	loaded = make(chan bool)
 )

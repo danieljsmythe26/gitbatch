@@ -10,7 +10,7 @@ import (
 // listens the event -> "branch.updated"
 func (gui *Gui) branchUpdated(event *git.RepositoryEvent) error {
 	gui.g.Update(func(g *gocui.Gui) error {
-		return gui.renderRepositoryDetails(gui.getSelectedRepository())
+		return gui.renderRepositoryDetails(gui.getSelectedRepository(), true)
 	})
 	return nil
 }

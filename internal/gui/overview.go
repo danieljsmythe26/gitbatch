@@ -14,10 +14,11 @@ func (gui *Gui) overviewLayout(g *gocui.Gui) error {
 		leftContentWidth = 50
 	}
 	leftWidth := leftContentWidth + 2
+	minPaneWidth := 2
 
 	rightWidth := int(0.18 * float32(maxX))
-	if rightWidth < 28 {
-		rightWidth = 28
+	if rightWidth < minPaneWidth {
+		rightWidth = minPaneWidth
 	}
 
 	commitMinWidth := 20
@@ -31,27 +32,43 @@ func (gui *Gui) overviewLayout(g *gocui.Gui) error {
 	if leftWidth > maxLeftWidth {
 		leftWidth = maxLeftWidth
 	}
+	if maxX-leftWidth < minPaneWidth*3 {
+		leftWidth = maxX - (minPaneWidth * 3)
+	}
+	if leftWidth < 10 {
+		leftWidth = 10
+	}
 
 	detailRight := maxX - rightWidth
-	if detailRight < leftWidth+middleMinWidth {
-		detailRight = leftWidth + middleMinWidth
+	maxRightWidth := maxX - leftWidth - (minPaneWidth * 2)
+	if maxRightWidth < minPaneWidth {
+		maxRightWidth = minPaneWidth
 	}
-	if maxX-detailRight < rightMinWidth {
-		detailRight = maxX - rightMinWidth
+	if rightWidth > maxRightWidth {
+		rightWidth = maxRightWidth
 	}
-	if detailRight <= leftWidth {
-		detailRight = leftWidth + 1
+	if detailRight < leftWidth+(minPaneWidth*2) {
+		detailRight = leftWidth + (minPaneWidth * 2)
+	}
+	if detailRight > maxX-minPaneWidth {
+		detailRight = maxX - minPaneWidth
 	}
 
 	detailMiddle := leftWidth + (detailRight-leftWidth)/2
-	if detailMiddle-leftWidth < commitMinWidth {
-		detailMiddle = leftWidth + commitMinWidth
+	if detailMiddle-leftWidth < minPaneWidth {
+		detailMiddle = leftWidth + minPaneWidth
 	}
-	if detailRight-detailMiddle < statusMinWidth {
-		detailMiddle = detailRight - statusMinWidth
+	if detailRight-detailMiddle < minPaneWidth {
+		detailMiddle = detailRight - minPaneWidth
 	}
 	if detailMiddle <= leftWidth {
-		detailMiddle = leftWidth + 1
+		detailMiddle = leftWidth + minPaneWidth
+	}
+	if detailRight <= detailMiddle {
+		detailRight = detailMiddle + minPaneWidth
+	}
+	if detailRight > maxX-1 {
+		detailRight = maxX - 1
 	}
 	quarterY := int(0.25 * float32(maxY))
 	threeQuarterY := int(0.75 * float32(maxY))

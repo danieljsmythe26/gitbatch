@@ -25,7 +25,12 @@ func (gui *Gui) renderMain() error {
 	for _, r := range gui.State.Repositories {
 		fmt.Fprintln(mainView, gui.repositoryLabel(r))
 	}
-	return gui.renderRepositoryDetails(gui.getSelectedRepository())
+	selected := gui.getSelectedRepository()
+	selectionChanged := selected != nil && gui.State.detailRepoID != selected.RepoID
+	if selected != nil {
+		gui.State.detailRepoID = selected.RepoID
+	}
+	return gui.renderRepositoryDetails(selected, selectionChanged)
 }
 
 // listens the event -> "repository.updated"
@@ -36,7 +41,7 @@ func (gui *Gui) repositoryUpdated(event *git.RepositoryEvent) error {
 	return nil
 }
 
-func (gui *Gui) renderRepositoryDetails(r *git.Repository) error {
+func (gui *Gui) renderRepositoryDetails(r *git.Repository, resetDynamic bool) error {
 	if r == nil {
 		return nil
 	}
@@ -50,7 +55,10 @@ func (gui *Gui) renderRepositoryDetails(r *git.Repository) error {
 	if err := gui.initStashedView(r); err != nil {
 		return err
 	}
-	return gui.initFocusStat(r)
+	if resetDynamic || gui.currentDynamicMode() == StatusMode {
+		return gui.initFocusStat(r)
+	}
+	return nil
 }
 
 // moves the cursor downwards for the main view and if it goes to bottom it
