@@ -20,15 +20,23 @@ func (gui *Gui) updateDynamicKeybindings() error {
 			View:        dynamicViewFeature.Name,
 			Key:         gocui.KeyTab,
 			Modifier:    gocui.ModNone,
-			Handler:     gui.focusBackToMain,
+			Handler:     gui.nextPaneView,
 			Display:     "tab",
-			Description: "Back to Overview",
-			Vital:       false,
+			Description: "Next Pane",
+			Vital:       true,
+		}, {
+			View:        dynamicViewFeature.Name,
+			Key:         gocui.KeyEsc,
+			Modifier:    gocui.ModNone,
+			Handler:     gui.focusMainPane,
+			Display:     "esc",
+			Description: "Repos",
+			Vital:       true,
 		}, {
 			View:        dynamicViewFeature.Name,
 			Key:         gocui.KeyArrowRight,
 			Modifier:    gocui.ModNone,
-			Handler:     gui.nextFocusView,
+			Handler:     gui.nextPaneView,
 			Display:     "→",
 			Description: "Next Panel",
 			Vital:       false,
@@ -36,7 +44,7 @@ func (gui *Gui) updateDynamicKeybindings() error {
 			View:        dynamicViewFeature.Name,
 			Key:         'l',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.nextFocusView,
+			Handler:     gui.nextPaneView,
 			Display:     "l",
 			Description: "Next Panel",
 			Vital:       false,
@@ -44,7 +52,7 @@ func (gui *Gui) updateDynamicKeybindings() error {
 			View:        dynamicViewFeature.Name,
 			Key:         gocui.KeyArrowLeft,
 			Modifier:    gocui.ModNone,
-			Handler:     gui.previousFocusView,
+			Handler:     gui.previousPaneView,
 			Display:     "←",
 			Description: "Prev Panel",
 			Vital:       false,
@@ -52,17 +60,34 @@ func (gui *Gui) updateDynamicKeybindings() error {
 			View:        dynamicViewFeature.Name,
 			Key:         'h',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.previousFocusView,
+			Handler:     gui.previousPaneView,
 			Display:     "h",
 			Description: "Prev Panel",
 			Vital:       false,
 		},
 	}
+	modeBindings := make([]*KeyBinding, 0)
 
 	switch t {
 	case CommitStatMode:
 		caseBindings := []*KeyBinding{
 			{
+				View:        dynamicViewFeature.Name,
+				Key:         'b',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.focusMainPane,
+				Display:     "b",
+				Description: "Repos",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         'q',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.focusMainPane,
+				Display:     "q",
+				Description: "Repos",
+				Vital:       true,
+			}, {
 				View:        dynamicViewFeature.Name,
 				Key:         'd',
 				Modifier:    gocui.ModNone,
@@ -89,9 +114,50 @@ func (gui *Gui) updateDynamicKeybindings() error {
 			},
 		}
 		keybindings = append(keybindings, caseBindings...)
+		modeBindings = append(modeBindings, caseBindings...)
 	case CommitDiffMode:
 		caseBindings := []*KeyBinding{
 			{
+				View:        dynamicViewFeature.Name,
+				Key:         'b',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.commitStat,
+				Display:     "b",
+				Description: "back",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         'q',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.commitStat,
+				Display:     "q",
+				Description: "back",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         gocui.KeySpace,
+				Modifier:    gocui.ModNone,
+				Handler:     gui.commitStat,
+				Display:     "space",
+				Description: "back",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         gocui.KeyBackspace2,
+				Modifier:    gocui.ModNone,
+				Handler:     gui.commitStat,
+				Display:     "backspace",
+				Description: "back",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         gocui.KeyEsc,
+				Modifier:    gocui.ModNone,
+				Handler:     gui.commitStat,
+				Display:     "esc",
+				Description: "back",
+				Vital:       true,
+			}, {
 				View:        dynamicViewFeature.Name,
 				Key:         's',
 				Modifier:    gocui.ModNone,
@@ -118,9 +184,26 @@ func (gui *Gui) updateDynamicKeybindings() error {
 			},
 		}
 		keybindings = append(keybindings, caseBindings...)
+		modeBindings = append(modeBindings, caseBindings...)
 	case StashDiffMode:
 		caseBindings := []*KeyBinding{
 			{
+				View:        dynamicViewFeature.Name,
+				Key:         'b',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.focusMainPane,
+				Display:     "b",
+				Description: "Repos",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         'q',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.focusMainPane,
+				Display:     "q",
+				Description: "Repos",
+				Vital:       true,
+			}, {
 				View:        dynamicViewFeature.Name,
 				Key:         's',
 				Modifier:    gocui.ModNone,
@@ -147,9 +230,26 @@ func (gui *Gui) updateDynamicKeybindings() error {
 			},
 		}
 		keybindings = append(keybindings, caseBindings...)
+		modeBindings = append(modeBindings, caseBindings...)
 	case StashStatMode:
 		caseBindings := []*KeyBinding{
 			{
+				View:        dynamicViewFeature.Name,
+				Key:         'b',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.focusMainPane,
+				Display:     "b",
+				Description: "Repos",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         'q',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.focusMainPane,
+				Display:     "q",
+				Description: "Repos",
+				Vital:       true,
+			}, {
 				View:        dynamicViewFeature.Name,
 				Key:         'd',
 				Modifier:    gocui.ModNone,
@@ -176,9 +276,26 @@ func (gui *Gui) updateDynamicKeybindings() error {
 			},
 		}
 		keybindings = append(keybindings, caseBindings...)
+		modeBindings = append(modeBindings, caseBindings...)
 	case StatusMode:
 		caseBindings := []*KeyBinding{
 			{
+				View:        dynamicViewFeature.Name,
+				Key:         'b',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.focusMainPane,
+				Display:     "b",
+				Description: "Repos",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         'q',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.focusMainPane,
+				Display:     "q",
+				Description: "Repos",
+				Vital:       true,
+			}, {
 				View:        dynamicViewFeature.Name,
 				Key:         'd',
 				Modifier:    gocui.ModNone,
@@ -193,6 +310,22 @@ func (gui *Gui) updateDynamicKeybindings() error {
 				Handler:     gui.openCommitMessageView,
 				Display:     "c",
 				Description: "commit",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         'p',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.pullSelectedRepository,
+				Display:     "p",
+				Description: "pull",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         'P',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.pushSelectedRepository,
+				Display:     "P",
+				Description: "push",
 				Vital:       true,
 			}, {
 				View:        dynamicViewFeature.Name,
@@ -261,9 +394,50 @@ func (gui *Gui) updateDynamicKeybindings() error {
 			},
 		}
 		keybindings = append(keybindings, caseBindings...)
+		modeBindings = append(modeBindings, caseBindings...)
 	case FileDiffMode:
 		caseBindings := []*KeyBinding{
 			{
+				View:        dynamicViewFeature.Name,
+				Key:         'b',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.statusStat,
+				Display:     "b",
+				Description: "back",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         'q',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.statusStat,
+				Display:     "q",
+				Description: "back",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         gocui.KeySpace,
+				Modifier:    gocui.ModNone,
+				Handler:     gui.statusStat,
+				Display:     "space",
+				Description: "back",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         gocui.KeyBackspace2,
+				Modifier:    gocui.ModNone,
+				Handler:     gui.statusStat,
+				Display:     "backspace",
+				Description: "back",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         gocui.KeyEsc,
+				Modifier:    gocui.ModNone,
+				Handler:     gui.statusStat,
+				Display:     "esc",
+				Description: "back",
+				Vital:       true,
+			}, {
 				View:        dynamicViewFeature.Name,
 				Key:         's',
 				Modifier:    gocui.ModNone,
@@ -290,10 +464,11 @@ func (gui *Gui) updateDynamicKeybindings() error {
 			},
 		}
 		keybindings = append(keybindings, caseBindings...)
+		modeBindings = append(modeBindings, caseBindings...)
 	default:
 
 	}
-	gui.KeyBindings = append(gui.KeyBindings, keybindings...)
+	gui.KeyBindings = append(gui.KeyBindings, modeBindings...)
 	for _, k := range keybindings {
 		if err := gui.g.SetKeybinding(k.View, k.Key, k.Modifier, k.Handler); err != nil {
 			return err

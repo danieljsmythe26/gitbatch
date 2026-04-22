@@ -191,6 +191,9 @@ func (gui *Gui) resetSideCursors() error {
 	for _, vf := range sideViews {
 		v, err := gui.g.View(vf.Name)
 		if err != nil {
+			if err == gocui.ErrUnknownView {
+				continue
+			}
 			return err
 		}
 		_ = v.SetCursor(0, 0)

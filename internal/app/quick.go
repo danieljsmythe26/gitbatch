@@ -44,6 +44,10 @@ func operate(directory, mode string) error {
 			RemoteName: "origin",
 			Progress:   true,
 		})
+	case "push":
+		return command.Push(r, &command.PushOptions{
+			RemoteName: "origin",
+		})
 	}
 	return nil
 }

@@ -62,6 +62,12 @@ func (gui *Gui) switchToPullMode(g *gocui.Gui, v *gocui.View) error {
 	return gui.updateKeyBindingsView(g, mainViewFeature.Name)
 }
 
+// switch the app's mode to push
+func (gui *Gui) switchToPushMode(g *gocui.Gui, v *gocui.View) error {
+	gui.State.Mode = pushMode
+	return gui.updateKeyBindingsView(g, mainViewFeature.Name)
+}
+
 // switch the app's mode to merge
 func (gui *Gui) switchToMergeMode(g *gocui.Gui, v *gocui.View) error {
 	gui.State.Mode = mergeMode

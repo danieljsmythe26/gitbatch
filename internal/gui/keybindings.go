@@ -28,15 +28,23 @@ func (gui *Gui) generateKeybindings() error {
 				View:        view.Name,
 				Key:         gocui.KeyTab,
 				Modifier:    gocui.ModNone,
-				Handler:     gui.focusBackToMain,
+				Handler:     gui.nextPaneView,
 				Display:     "tab",
-				Description: "Back to Overview",
+				Description: "Next Pane",
 				Vital:       true,
+			}, {
+				View:        view.Name,
+				Key:         gocui.KeyEsc,
+				Modifier:    gocui.ModNone,
+				Handler:     gui.focusMainPane,
+				Display:     "esc",
+				Description: "Repos",
+				Vital:       false,
 			}, {
 				View:        view.Name,
 				Key:         gocui.KeyArrowRight,
 				Modifier:    gocui.ModNone,
-				Handler:     gui.nextFocusView,
+				Handler:     gui.nextPaneView,
 				Display:     "→",
 				Description: "Next Panel",
 				Vital:       false,
@@ -44,7 +52,7 @@ func (gui *Gui) generateKeybindings() error {
 				View:        view.Name,
 				Key:         'l',
 				Modifier:    gocui.ModNone,
-				Handler:     gui.nextFocusView,
+				Handler:     gui.nextPaneView,
 				Display:     "l",
 				Description: "Next Panel",
 				Vital:       false,
@@ -52,7 +60,7 @@ func (gui *Gui) generateKeybindings() error {
 				View:        view.Name,
 				Key:         gocui.KeyArrowLeft,
 				Modifier:    gocui.ModNone,
-				Handler:     gui.previousFocusView,
+				Handler:     gui.previousPaneView,
 				Display:     "←",
 				Description: "Prev Panel",
 				Vital:       false,
@@ -60,7 +68,7 @@ func (gui *Gui) generateKeybindings() error {
 				View:        view.Name,
 				Key:         'h',
 				Modifier:    gocui.ModNone,
-				Handler:     gui.previousFocusView,
+				Handler:     gui.previousPaneView,
 				Display:     "h",
 				Description: "Prev Panel",
 				Vital:       false,
@@ -202,6 +210,14 @@ func (gui *Gui) generateKeybindings() error {
 			Vital:       false,
 		}, {
 			View:        mainViewFeature.Name,
+			Key:         'P',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.switchToPushMode,
+			Display:     "P",
+			Description: "Push mode",
+			Vital:       false,
+		}, {
+			View:        mainViewFeature.Name,
 			Key:         'm',
 			Modifier:    gocui.ModNone,
 			Handler:     gui.switchToMergeMode,
@@ -220,9 +236,9 @@ func (gui *Gui) generateKeybindings() error {
 			View:        mainViewFeature.Name,
 			Key:         gocui.KeyTab,
 			Modifier:    gocui.ModNone,
-			Handler:     gui.focusToRepository,
+			Handler:     gui.nextPaneView,
 			Display:     "tab",
-			Description: "Focus",
+			Description: "Next Pane",
 			Vital:       true,
 		}, {
 			View:        mainViewFeature.Name,
@@ -340,9 +356,9 @@ func (gui *Gui) generateKeybindings() error {
 			View:        mainViewFeature.Name,
 			Key:         'b',
 			Modifier:    gocui.ModNone,
-			Handler:     gui.openBranchesView,
+			Handler:     gui.focusBranchPane,
 			Display:     "b",
-			Description: "branches",
+			Description: "Branches Pane",
 			Vital:       true,
 		}, {
 			View:        mainViewFeature.Name,
@@ -385,6 +401,14 @@ func (gui *Gui) generateKeybindings() error {
 			Description: "Remote Branches",
 			Vital:       true,
 		}, {
+			View:        remoteViewFeature.Name,
+			Key:         'q',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.focusMainPane,
+			Display:     "q",
+			Description: "Repos",
+			Vital:       true,
+		}, {
 			View:        remoteBranchViewFeature.Name,
 			Key:         's',
 			Modifier:    gocui.ModNone,
@@ -414,7 +438,15 @@ func (gui *Gui) generateKeybindings() error {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.closeBranchesView,
 			Display:     "q",
-			Description: "close/cancel",
+			Description: "Repos",
+			Vital:       true,
+		}, {
+			View:        branchViewFeature.Name,
+			Key:         'b',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.focusMainPane,
+			Display:     "b",
+			Description: "Repos",
 			Vital:       true,
 		}, {
 			View:        batchBranchViewFeature.Name,
@@ -500,6 +532,22 @@ func (gui *Gui) generateKeybindings() error {
 			Vital:       true,
 		}, {
 			View:        commitViewFeature.Name,
+			Key:         'q',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.focusMainPane,
+			Display:     "q",
+			Description: "Repos",
+			Vital:       true,
+		}, {
+			View:        commitViewFeature.Name,
+			Key:         'b',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.focusMainPane,
+			Display:     "b",
+			Description: "Repos",
+			Vital:       true,
+		}, {
+			View:        commitViewFeature.Name,
 			Key:         gocui.KeyPgup,
 			Modifier:    gocui.ModNone,
 			Handler:     gui.commitPageUp,
@@ -556,6 +604,22 @@ func (gui *Gui) generateKeybindings() error {
 			Display:     "k",
 			Description: "Cursor Up",
 			Vital:       false,
+		}, {
+			View:        stashViewFeature.Name,
+			Key:         'q',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.focusMainPane,
+			Display:     "q",
+			Description: "Repos",
+			Vital:       true,
+		}, {
+			View:        stashViewFeature.Name,
+			Key:         'b',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.focusMainPane,
+			Display:     "b",
+			Description: "Repos",
+			Vital:       true,
 		}, {
 			View:        stashViewFeature.Name,
 			Key:         'd',
@@ -709,6 +773,9 @@ func (gui *Gui) updateKeyBindingsView(g *gocui.Gui, viewName string) error {
 	case PullMode:
 		v.BgColor = gocui.ColorMagenta
 		modeLabel = pullSymbol + ws + "PULL"
+	case PushMode:
+		v.BgColor = gocui.ColorYellow
+		modeLabel = pushSymbol + ws + "PUSH"
 	case MergeMode:
 		v.BgColor = gocui.ColorCyan
 		modeLabel = mergeSymbol + ws + "MERGE"
