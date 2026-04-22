@@ -25,6 +25,9 @@ const (
 	// PullJob is wrapper of git pull command
 	PullJob Type = "pull"
 
+	// PushJob is wrapper of git push command
+	PushJob Type = "push"
+
 	// MergeJob is wrapper of git merge command
 	MergeJob Type = "merge"
 
@@ -70,6 +73,27 @@ func (j *Job) start() error {
 			}
 		}
 		if err := command.Pull(j.Repository, opts); err != nil {
+			j.Repository.SetWorkStatus(git.Fail)
+			j.Repository.State.Message = err.Error()
+			return err
+		}
+	case PushJob:
+		j.Repository.State.Message = "pushing.."
+		var opts *command.PushOptions
+		if j.Repository.State.Branch.Upstream == nil {
+			j.Repository.SetWorkStatus(git.Fail)
+			j.Repository.State.Message = "upstream not set"
+			return nil
+		}
+		if j.Options != nil {
+			opts = j.Options.(*command.PushOptions)
+		} else {
+			opts = &command.PushOptions{
+				RemoteName:  j.Repository.State.Remote.Name,
+				CommandMode: command.ModeLegacy,
+			}
+		}
+		if err := command.Push(j.Repository, opts); err != nil {
 			j.Repository.SetWorkStatus(git.Fail)
 			j.Repository.State.Message = err.Error()
 			return err

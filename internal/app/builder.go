@@ -74,7 +74,7 @@ func overrideConfig(appConfig, setupConfig *Config) *Config {
 }
 
 func (a *App) execQuickMode(directories []string) error {
-	if a.Config.Mode != "fetch" && a.Config.Mode != "pull" {
+	if a.Config.Mode != "fetch" && a.Config.Mode != "pull" && a.Config.Mode != "push" {
 		return fmt.Errorf("unrecognized quick mode: " + a.Config.Mode)
 	}
 

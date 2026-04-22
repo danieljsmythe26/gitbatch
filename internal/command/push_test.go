@@ -1,4 +1,4 @@
-package job
+package command
 
 import (
 	"os"
@@ -10,48 +10,33 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStart(t *testing.T) {
-	th := git.InitTestRepositoryFromLocal(t)
-	defer th.CleanUp(t)
-
-	mockJob1 := &Job{
-		JobType:    PullJob,
-		Repository: th.Repository,
-	}
-	mockJob2 := &Job{
-		JobType:    FetchJob,
-		Repository: th.Repository,
-	}
-	mockJob3 := &Job{
-		JobType:    MergeJob,
-		Repository: th.Repository,
+var (
+	testPushopts1 = &PushOptions{
+		RemoteName: "origin",
 	}
 
-	var tests = []struct {
-		input *Job
-	}{
-		{mockJob1},
-		{mockJob2},
-		{mockJob3},
+	testPushopts2 = &PushOptions{
+		RemoteName: "origin",
+		Force:      true,
 	}
-	for _, test := range tests {
-		err := test.input.start()
-		require.NoError(t, err)
-	}
-}
+)
 
-func TestStartPush(t *testing.T) {
+func TestPushWithGit(t *testing.T) {
 	th := git.InitTestRepositoryFromLocal(t)
 	defer th.CleanUp(t)
 	configureLocalPushRemote(t, th.RepoPath)
 
-	mockJob := &Job{
-		JobType:    PushJob,
-		Repository: th.Repository,
+	var tests = []struct {
+		inp1 *git.Repository
+		inp2 *PushOptions
+	}{
+		{th.Repository, testPushopts1},
+		{th.Repository, testPushopts2},
 	}
-
-	err := mockJob.start()
-	require.NoError(t, err)
+	for _, test := range tests {
+		err := pushWithGit(test.inp1, test.inp2)
+		require.NoError(t, err)
+	}
 }
 
 func configureLocalPushRemote(t *testing.T, repoPath string) string {

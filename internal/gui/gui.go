@@ -18,7 +18,6 @@ type Gui struct {
 	KeyBindings []*KeyBinding
 	State       guiState
 	mutex       *sync.Mutex
-	order       Layout
 }
 
 // guiState struct holds the repositories, directories, mode and queue of the
@@ -55,26 +54,23 @@ type branchCountMap struct {
 // ModeID is the mode indicator for the gui
 type ModeID string
 
-// Layout tells the gui how to order views
-type Layout int
-
 const (
 	// FetchMode puts the gui in fetch state
 	FetchMode ModeID = "fetch"
 	// PullMode puts the gui in pull state
 	PullMode = "pull"
+	// PushMode puts the gui in push state
+	PushMode = "push"
 	// MergeMode puts the gui in merge state
 	MergeMode = "merge"
 	// CheckoutMode checkout selected repositories
 	CheckoutMode = "checkout"
-
-	overview Layout = 0
-	focus    Layout = 1
 )
 
 var (
 	mainViewFeature          = viewFeature{Name: "main", Title: " Matched Repositories "}
 	mainViewFrameFeature     = viewFeature{Name: "mainframe", Title: " Matched Repositories "}
+	mainHeaderViewFeature    = viewFeature{Name: "mainheader", Title: " Repository Header "}
 	branchViewFeature        = viewFeature{Name: "branch", Title: " Branches "}
 	batchBranchViewFeature   = viewFeature{Name: "batch-branch", Title: " Select Branch "}
 	suggestBranchViewFeature = viewFeature{Name: "suggest-branch", Title: " Enter New Branch Name "}
@@ -89,10 +85,11 @@ var (
 
 	fetchMode    = mode{ModeID: FetchMode, DisplayString: "Fetch", CommandString: "fetch"}
 	pullMode     = mode{ModeID: PullMode, DisplayString: "Pull", CommandString: "pull"}
+	pushMode     = mode{ModeID: PushMode, DisplayString: "Push", CommandString: "push"}
 	mergeMode    = mode{ModeID: MergeMode, DisplayString: "Merge", CommandString: "merge"}
 	checkoutMode = mode{ModeID: CheckoutMode, DisplayString: "Checkout", CommandString: "checkout"}
 
-	modes = []mode{fetchMode, pullMode, mergeMode}
+	modes = []mode{fetchMode, pullMode, pushMode, mergeMode}
 	// mainViews = []viewFeature{mainViewFeature, commitViewFeature, dynamicViewFeature, remoteViewFeature, remoteBranchViewFeature, branchViewFeature, stashViewFeature}
 	loaded = make(chan bool)
 )
@@ -191,12 +188,7 @@ func (gui *Gui) renderTitle() error {
 // set the layout and create views with their default size, name etc. values
 // TODO: window sizes can be handled better
 func (gui *Gui) layout(g *gocui.Gui) error {
-	if gui.order == overview {
-		return gui.overviewLayout(g)
-	} else if gui.order == focus {
-		return gui.focusLayout(g)
-	}
-	return nil
+	return gui.overviewLayout(g)
 }
 
 // quit from the gui and end its loop

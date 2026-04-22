@@ -28,19 +28,20 @@ func (gui *Gui) initFocusStat(r *git.Repository) error {
 	if err != nil || er2 != nil || r.State.Branch.Upstream == nil {
 		fmt.Fprintln(v, "Your branch is not tracking a remote branch.")
 	} else {
+		fmt.Fprintf(v, "Push %s   Pull %s\n", yellow.Sprint(r.State.Branch.Pushables), yellow.Sprint(r.State.Branch.Pullables))
 		if ps == 0 && pl == 0 {
 			fmt.Fprintln(v, "Your branch is up to date with "+cyan.Sprint(r.State.Branch.Upstream.Name))
 		} else {
 			if ps > 0 && pl > 0 {
 				fmt.Fprintln(v, "Your branch and "+cyan.Sprint(r.State.Branch.Upstream.Name)+" have diverged,")
 				fmt.Fprintln(v, "and have "+yellow.Sprint(r.State.Branch.Pushables)+" and "+yellow.Sprint(r.State.Branch.Pullables)+" different commits each, respectively.")
-				fmt.Fprintln(v, "(\"pull\" to merge the remote branch into yours)")
+				fmt.Fprintln(v, "Next action: [p] pull or [P] push")
 			} else if pl > 0 && ps == 0 {
 				fmt.Fprintln(v, "Your branch is behind "+cyan.Sprint(r.State.Branch.Upstream.Name)+" by "+yellow.Sprint(r.State.Branch.Pullables)+" commit(s).")
-				fmt.Fprintln(v, "(\"pull\" to update your local branch)")
+				fmt.Fprintln(v, "Next action: [p] pull")
 			} else if ps > 0 && pl == 0 {
 				fmt.Fprintln(v, "Your branch is ahead of "+cyan.Sprint(r.State.Branch.Upstream.Name)+" by "+yellow.Sprint(r.State.Branch.Pushables)+" commit(s).")
-				fmt.Fprintln(v, "(\"push\" to publish your local commits)")
+				fmt.Fprintln(v, "Next action: [P] push")
 			}
 		}
 	}

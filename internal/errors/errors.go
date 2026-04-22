@@ -67,6 +67,8 @@ func ParseGitError(out string, err error) error {
 		return ErrRemoteNotFound
 	} else if strings.Contains(out, "for your current branch, you must specify a branch on the command line") {
 		return ErrRemoteBranchNotSpecified
+	} else if strings.Contains(out, "has no upstream branch") {
+		return ErrRemoteBranchNotSpecified
 	} else if strings.Contains(out, "Automatic merge failed; fix conflicts and then commit the result") {
 		return ErrConflictAfterMerge
 	} else if strings.Contains(out, "error: Pulling is not possible because you have unmerged files.") {

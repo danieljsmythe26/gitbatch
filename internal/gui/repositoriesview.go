@@ -21,12 +21,11 @@ func (gui *Gui) renderMain() error {
 		return err
 	}
 	mainView.Clear()
+	gui.renderTableHeader(gui.renderRules())
 	for _, r := range gui.State.Repositories {
 		fmt.Fprintln(mainView, gui.repositoryLabel(r))
 	}
-	// while refreshing, refresh sideViews for selected entity, something may
-	// be changed?
-	return gui.renderSideViews(gui.getSelectedRepository())
+	return gui.renderRepositoryDetails(gui.getSelectedRepository())
 }
 
 // listens the event -> "repository.updated"
@@ -35,6 +34,23 @@ func (gui *Gui) repositoryUpdated(event *git.RepositoryEvent) error {
 		return gui.renderMain()
 	})
 	return nil
+}
+
+func (gui *Gui) renderRepositoryDetails(r *git.Repository) error {
+	if r == nil {
+		return nil
+	}
+	_ = r.State.Branch.InitializeCommits(r)
+	if err := gui.renderSideViews(r); err != nil {
+		return err
+	}
+	if err := gui.renderCommits(r); err != nil {
+		return err
+	}
+	if err := gui.initStashedView(r); err != nil {
+		return err
+	}
+	return gui.initFocusStat(r)
 }
 
 // moves the cursor downwards for the main view and if it goes to bottom it
@@ -185,6 +201,11 @@ func (gui *Gui) addToQueue(r *git.Repository) error {
 			return nil
 		}
 		j.JobType = job.PullJob
+	case PushMode:
+		if r.State.Branch.Upstream == nil {
+			return nil
+		}
+		j.JobType = job.PushJob
 	case MergeMode:
 		if r.State.Branch.Upstream == nil {
 			return nil

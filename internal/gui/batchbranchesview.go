@@ -20,9 +20,6 @@ func (gui *Gui) openBatchBranchView(g *gocui.Gui, v *gocui.View) error {
 
 // close confirmation view
 func (gui *Gui) closeBatchBranchesView(g *gocui.Gui, v *gocui.View) error {
-	if gui.order == focus {
-		return nil
-	}
 	if _, err := g.SetViewOnBottom(batchBranchViewFeature.Name); err != nil {
 		return err
 	}
@@ -118,9 +115,6 @@ func (gui *Gui) openSuggestBranchView(g *gocui.Gui, v *gocui.View) error {
 
 // close confirmation view
 func (gui *Gui) closeSuggestBranchesView(g *gocui.Gui, v *gocui.View) error {
-	if gui.order == focus {
-		return nil
-	}
 	if _, err := g.SetViewOnBottom(suggestBranchViewFeature.Name); err != nil {
 		return err
 	}
