@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/isacikgoz/gitbatch/internal/git"
 	"github.com/isacikgoz/gitbatch/internal/job"
@@ -18,6 +19,7 @@ type Gui struct {
 	KeyBindings []*KeyBinding
 	State       guiState
 	mutex       *sync.Mutex
+	feedbackMu  *sync.RWMutex
 }
 
 // guiState struct holds the repositories, directories, mode and queue of the
@@ -30,7 +32,14 @@ type guiState struct {
 	FailoverQueue *job.Queue
 	targetBranch  string
 	detailRepoID  string
+	pushFeedback  map[string]pushFeedbackState
 	totalBranches []*branchCountMap
+}
+
+type pushFeedbackState struct {
+	Message   string
+	Success   bool
+	ExpiresAt time.Time
 }
 
 // this struct encapsulates the name and title of a view. the name of a view is
@@ -104,8 +113,9 @@ func New(mode string, directories []string) (*Gui, error) {
 		FailoverQueue: job.CreateJobQueue(),
 	}
 	gui := &Gui{
-		State: initialState,
-		mutex: &sync.Mutex{},
+		State:      initialState,
+		mutex:      &sync.Mutex{},
+		feedbackMu: &sync.RWMutex{},
 	}
 	for _, m := range modes {
 		if string(m.ModeID) == mode {

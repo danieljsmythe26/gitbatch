@@ -37,6 +37,18 @@ func (jq *Queue) AddJob(j *Job) error {
 	return nil
 }
 
+// Jobs returns a shallow copy of queued jobs in their current order.
+func (jq *Queue) Jobs() []*Job {
+	jobs := make([]*Job, len(jq.series))
+	copy(jobs, jq.series)
+	return jobs
+}
+
+// Len returns the number of queued jobs.
+func (jq *Queue) Len() int {
+	return len(jq.series)
+}
+
 // StartNext starts the next job in the queue
 func (jq *Queue) StartNext() (j *Job, finished bool, err error) {
 	finished = false

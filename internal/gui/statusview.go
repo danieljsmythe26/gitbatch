@@ -53,6 +53,36 @@ func (gui *Gui) initFocusStat(r *git.Repository) error {
 			}
 		}
 	}
+	if feedback, ok := gui.pushFeedbackFor(r); ok {
+		fmt.Fprintln(v, "")
+		if feedback.Success {
+			fmt.Fprintln(v, green.Sprint("Push complete: "+feedback.Message))
+		} else {
+			fmt.Fprintln(v, red.Sprint(feedback.Message))
+		}
+	}
+	if gui.State.Mode.ModeID == PushMode {
+		fmt.Fprintln(v, "")
+		queuedCount := gui.State.Queue.Len()
+		switch {
+		case queuedCount > 0:
+			fmt.Fprintf(v, "Push mode: %d repo(s) queued\n", queuedCount)
+			if queued, _ := gui.State.Queue.IsInTheQueue(r); queued {
+				fmt.Fprintln(v, "[space] remove repo from batch queue")
+			} else {
+				fmt.Fprintln(v, "[space] add repo to batch queue")
+			}
+			fmt.Fprintln(v, "[enter] start queued pushes")
+		case r.State.Branch.Upstream == nil:
+			fmt.Fprintln(v, "Push mode:")
+			fmt.Fprintln(v, "[enter] push unavailable for this branch")
+			fmt.Fprintln(v, "[space] queue unavailable for this branch")
+		default:
+			fmt.Fprintln(v, "Push mode:")
+			fmt.Fprintln(v, "[enter] push this repo now")
+			fmt.Fprintln(v, "[space] add repo to batch queue")
+		}
+	}
 	files, err := command.Status(r)
 	if err != nil {
 		return err
