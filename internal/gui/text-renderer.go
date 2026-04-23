@@ -213,7 +213,7 @@ func renderRevCount(r *git.Repository, rule *RepositoryDecorationRules) string {
 func (gui *Gui) renderStatus(r *git.Repository) string {
 	var status string
 	if r.WorkStatus() == git.Queued {
-		if inQueue, j := gui.State.Queue.IsInTheQueue(r); inQueue {
+		if inQueue, j := gui.queueIsInTheQueue(r); inQueue {
 			status = printQueued(r, j)
 		}
 	} else if r.WorkStatus() == git.Working {

@@ -8,7 +8,7 @@ import (
 	"github.com/jroimartin/gocui"
 )
 
-const pushFeedbackDuration = 1500 * time.Millisecond
+var pushFeedbackDuration = 1500 * time.Millisecond
 
 func (gui *Gui) setPushFeedback(r *git.Repository, success bool, message string) {
 	if r == nil {

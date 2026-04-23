@@ -202,7 +202,7 @@ func (gui *Gui) addToQueue(r *git.Repository) error {
 	if err != nil || j == nil {
 		return err
 	}
-	err = gui.State.Queue.AddJob(j)
+	err = gui.queueAddJob(j)
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func (gui *Gui) newJobForRepository(r *git.Repository) (*job.Job, error) {
 
 // removes given entity from job queue
 func (gui *Gui) removeFromQueue(r *git.Repository) error {
-	err := gui.State.Queue.RemoveFromQueue(r)
+	err := gui.queueRemoveJob(r)
 	if err != nil {
 		return err
 	}
@@ -262,26 +262,36 @@ func (gui *Gui) removeFromQueue(r *git.Repository) error {
 // this function starts the queue and updates the gui with the result of an
 // operation
 func (gui *Gui) startQueue(g *gocui.Gui, v *gocui.View) error {
-	if gui.State.Queue.Len() == 0 {
+	jobs := gui.queueJobs()
+	if len(jobs) == 0 {
 		return nil
 	}
-	jobs := gui.State.Queue.Jobs()
 	gui.runJobs(jobs)
 	return nil
 }
 
 func (gui *Gui) startPrimaryAction(g *gocui.Gui, v *gocui.View) error {
-	if gui.State.Mode.ModeID != PushMode || gui.State.Queue.Len() > 0 {
-		return gui.startQueue(g, v)
-	}
-
-	r := gui.getSelectedRepository()
-	j, err := gui.newJobForRepository(r)
-	if err != nil || j == nil {
+	jobs, err := gui.jobsForPrimaryAction(gui.getSelectedRepository())
+	if err != nil {
 		return err
 	}
-	gui.runJobs([]*job.Job{j})
+	if len(jobs) == 0 {
+		return nil
+	}
+	gui.runJobs(jobs)
 	return nil
+}
+
+func (gui *Gui) jobsForPrimaryAction(selected *git.Repository) ([]*job.Job, error) {
+	if gui.State.Mode.ModeID != PushMode || gui.queueLen() > 0 {
+		return gui.queueJobs(), nil
+	}
+
+	j, err := gui.newJobForRepository(selected)
+	if err != nil || j == nil {
+		return nil, err
+	}
+	return []*job.Job{j}, nil
 }
 
 func (gui *Gui) runJobs(jobs []*job.Job) {
@@ -294,13 +304,13 @@ func (gui *Gui) runJobs(jobs []*job.Job) {
 		}
 
 		fails := queue.StartJobsAsync()
-		guiGo.State.Queue = job.CreateJobQueue()
+		guiGo.replaceQueue(job.CreateJobQueue())
 		for _, queuedJob := range jobsToRun {
 			err, failed := fails[queuedJob]
 			if failed {
 				if err == gerr.ErrAuthenticationRequired {
 					queuedJob.Repository.SetWorkStatus(git.Paused)
-					_ = guiGo.State.FailoverQueue.AddJob(queuedJob)
+					_ = guiGo.failoverAddJob(queuedJob)
 					if queuedJob.JobType == job.PushJob {
 						guiGo.setPushFeedback(queuedJob.Repository, false, "Push paused: authentication required. Press [u].")
 					}
@@ -320,17 +330,17 @@ func (gui *Gui) runJobs(jobs []*job.Job) {
 }
 
 func (gui *Gui) submitCredentials(g *gocui.Gui, v *gocui.View) error {
-	if is, j := gui.State.FailoverQueue.IsInTheQueue(gui.getSelectedRepository()); is {
+	if is, j := gui.failoverIsInTheQueue(gui.getSelectedRepository()); is {
 		if j.Repository.WorkStatus() == git.Paused {
-			if err := gui.State.FailoverQueue.RemoveFromQueue(j.Repository); err != nil {
+			if err := gui.failoverRemoveJob(j.Repository); err != nil {
 				return err
 			}
-			err := gui.openAuthenticationView(g, gui.State.Queue, j, v.Name())
+			err := gui.openAuthenticationView(g, nil, j, v.Name())
 			if err != nil {
 				return err
 			}
-			if isnt, _ := gui.State.Queue.IsInTheQueue(j.Repository); !isnt {
-				_ = gui.State.FailoverQueue.AddJob(j)
+			if isnt, _ := gui.queueIsInTheQueue(j.Repository); !isnt {
+				_ = gui.failoverAddJob(j)
 			}
 		}
 	}

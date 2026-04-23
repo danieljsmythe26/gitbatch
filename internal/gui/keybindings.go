@@ -797,12 +797,12 @@ func (gui *Gui) updateKeyBindingsView(g *gocui.Gui, viewName string) error {
 				case gocui.KeySpace:
 					description = "Queue"
 					if selected := gui.getSelectedRepository(); selected != nil {
-						if queued, _ := gui.State.Queue.IsInTheQueue(selected); queued {
+						if queued, _ := gui.queueIsInTheQueue(selected); queued {
 							description = "Unqueue"
 						}
 					}
 				case gocui.KeyEnter:
-					if gui.State.Queue.Len() > 0 {
+					if gui.queueLen() > 0 {
 						description = "Start Queue"
 					} else {
 						description = "Push Current"

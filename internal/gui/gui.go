@@ -19,6 +19,7 @@ type Gui struct {
 	KeyBindings []*KeyBinding
 	State       guiState
 	mutex       *sync.Mutex
+	queueMu     *sync.RWMutex
 	feedbackMu  *sync.RWMutex
 }
 
@@ -115,6 +116,7 @@ func New(mode string, directories []string) (*Gui, error) {
 	gui := &Gui{
 		State:      initialState,
 		mutex:      &sync.Mutex{},
+		queueMu:    &sync.RWMutex{},
 		feedbackMu: &sync.RWMutex{},
 	}
 	for _, m := range modes {

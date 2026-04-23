@@ -63,24 +63,20 @@ func (gui *Gui) initFocusStat(r *git.Repository) error {
 	}
 	if gui.State.Mode.ModeID == PushMode {
 		fmt.Fprintln(v, "")
-		queuedCount := gui.State.Queue.Len()
+		queuedCount := gui.queueLen()
 		switch {
 		case queuedCount > 0:
 			fmt.Fprintf(v, "Push mode: %d repo(s) queued\n", queuedCount)
-			if queued, _ := gui.State.Queue.IsInTheQueue(r); queued {
-				fmt.Fprintln(v, "[space] remove repo from batch queue")
-			} else {
-				fmt.Fprintln(v, "[space] add repo to batch queue")
-			}
-			fmt.Fprintln(v, "[enter] start queued pushes")
+			fmt.Fprintln(v, "Use [enter] in the repo list to start queued pushes")
+			fmt.Fprintln(v, "Use [tab] to return to the repo list")
 		case r.State.Branch.Upstream == nil:
 			fmt.Fprintln(v, "Push mode:")
-			fmt.Fprintln(v, "[enter] push unavailable for this branch")
-			fmt.Fprintln(v, "[space] queue unavailable for this branch")
+			fmt.Fprintln(v, "Push unavailable: this branch is not tracking a remote branch")
 		default:
 			fmt.Fprintln(v, "Push mode:")
-			fmt.Fprintln(v, "[enter] push this repo now")
-			fmt.Fprintln(v, "[space] add repo to batch queue")
+			fmt.Fprintln(v, "Use [enter] in the repo list to push this repo now")
+			fmt.Fprintln(v, "Use [space] in the repo list to add this repo to the batch queue")
+			fmt.Fprintln(v, "Use [P] here to push from the status pane")
 		}
 	}
 	files, err := command.Status(r)
