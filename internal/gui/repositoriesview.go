@@ -198,6 +198,23 @@ func (gui *Gui) getSelectedRepository() *git.Repository {
 
 // adds given entity to job queue
 func (gui *Gui) addToQueue(r *git.Repository) error {
+	j, err := gui.newJobForRepository(r)
+	if err != nil || j == nil {
+		return err
+	}
+	err = gui.queueAddJob(j)
+	if err != nil {
+		return err
+	}
+	r.SetWorkStatus(git.Queued)
+	return nil
+}
+
+func (gui *Gui) newJobForRepository(r *git.Repository) (*job.Job, error) {
+	if r == nil {
+		return nil, nil
+	}
+
 	j := &job.Job{
 		Repository: r,
 	}
@@ -206,17 +223,18 @@ func (gui *Gui) addToQueue(r *git.Repository) error {
 		j.JobType = job.FetchJob
 	case PullMode:
 		if r.State.Branch.Upstream == nil {
-			return nil
+			return nil, nil
 		}
 		j.JobType = job.PullJob
 	case PushMode:
 		if r.State.Branch.Upstream == nil {
-			return nil
+			gui.setPushFeedback(r, false, "Push unavailable: branch is not tracking a remote branch.")
+			return nil, nil
 		}
 		j.JobType = job.PushJob
 	case MergeMode:
 		if r.State.Branch.Upstream == nil {
-			return nil
+			return nil, nil
 		}
 		j.JobType = job.MergeJob
 	case CheckoutMode:
@@ -226,19 +244,14 @@ func (gui *Gui) addToQueue(r *git.Repository) error {
 			CreateIfAbsent: true,
 		}
 	default:
-		return nil
+		return nil, nil
 	}
-	err := gui.State.Queue.AddJob(j)
-	if err != nil {
-		return err
-	}
-	r.SetWorkStatus(git.Queued)
-	return nil
+	return j, nil
 }
 
 // removes given entity from job queue
 func (gui *Gui) removeFromQueue(r *git.Repository) error {
-	err := gui.State.Queue.RemoveFromQueue(r)
+	err := gui.queueRemoveJob(r)
 	if err != nil {
 		return err
 	}
@@ -249,31 +262,85 @@ func (gui *Gui) removeFromQueue(r *git.Repository) error {
 // this function starts the queue and updates the gui with the result of an
 // operation
 func (gui *Gui) startQueue(g *gocui.Gui, v *gocui.View) error {
-	go func(gui_go *Gui) {
-		fails := gui_go.State.Queue.StartJobsAsync()
-		gui_go.State.Queue = job.CreateJobQueue()
-		for j, err := range fails {
-			if err == gerr.ErrAuthenticationRequired {
-				j.Repository.SetWorkStatus(git.Paused)
-				_ = gui_go.State.FailoverQueue.AddJob(j)
-			}
-		}
-	}(gui)
+	jobs := gui.queueJobs()
+	if len(jobs) == 0 {
+		return nil
+	}
+	gui.runJobs(jobs)
 	return nil
 }
 
+func (gui *Gui) startPrimaryAction(g *gocui.Gui, v *gocui.View) error {
+	jobs, err := gui.jobsForPrimaryAction(gui.getSelectedRepository())
+	if err != nil {
+		return err
+	}
+	if len(jobs) == 0 {
+		return nil
+	}
+	gui.runJobs(jobs)
+	return nil
+}
+
+func (gui *Gui) jobsForPrimaryAction(selected *git.Repository) ([]*job.Job, error) {
+	if gui.State.Mode.ModeID != PushMode || gui.queueLen() > 0 {
+		return gui.queueJobs(), nil
+	}
+
+	j, err := gui.newJobForRepository(selected)
+	if err != nil || j == nil {
+		return nil, err
+	}
+	return []*job.Job{j}, nil
+}
+
+func (gui *Gui) runJobs(jobs []*job.Job) {
+	go func(guiGo *Gui, jobsToRun []*job.Job) {
+		queue := job.CreateJobQueue()
+		for _, queuedJob := range jobsToRun {
+			if err := queue.AddJob(queuedJob); err != nil {
+				continue
+			}
+		}
+
+		fails := queue.StartJobsAsync()
+		guiGo.replaceQueue(job.CreateJobQueue())
+		for _, queuedJob := range jobsToRun {
+			err, failed := fails[queuedJob]
+			if failed {
+				if err == gerr.ErrAuthenticationRequired {
+					queuedJob.Repository.SetWorkStatus(git.Paused)
+					_ = guiGo.failoverAddJob(queuedJob)
+					if queuedJob.JobType == job.PushJob {
+						guiGo.setPushFeedback(queuedJob.Repository, false, "Push paused: authentication required. Press [u].")
+					}
+					continue
+				}
+				if queuedJob.JobType == job.PushJob {
+					guiGo.setPushFeedback(queuedJob.Repository, false, "Push failed: "+queuedJob.Repository.State.Message)
+				}
+				continue
+			}
+			if queuedJob.JobType == job.PushJob && queuedJob.Repository.WorkStatus() == git.Success {
+				guiGo.setPushFeedback(queuedJob.Repository, true, queuedJob.Repository.State.Message)
+			}
+		}
+		guiGo.requestRender()
+	}(gui, jobs)
+}
+
 func (gui *Gui) submitCredentials(g *gocui.Gui, v *gocui.View) error {
-	if is, j := gui.State.FailoverQueue.IsInTheQueue(gui.getSelectedRepository()); is {
+	if is, j := gui.failoverIsInTheQueue(gui.getSelectedRepository()); is {
 		if j.Repository.WorkStatus() == git.Paused {
-			if err := gui.State.FailoverQueue.RemoveFromQueue(j.Repository); err != nil {
+			if err := gui.failoverRemoveJob(j.Repository); err != nil {
 				return err
 			}
-			err := gui.openAuthenticationView(g, gui.State.Queue, j, v.Name())
+			err := gui.openAuthenticationView(g, nil, j, v.Name())
 			if err != nil {
 				return err
 			}
-			if isnt, _ := gui.State.Queue.IsInTheQueue(j.Repository); !isnt {
-				_ = gui.State.FailoverQueue.AddJob(j)
+			if isnt, _ := gui.queueIsInTheQueue(j.Repository); !isnt {
+				_ = gui.failoverAddJob(j)
 			}
 		}
 	}

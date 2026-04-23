@@ -324,7 +324,7 @@ func (gui *Gui) generateKeybindings() error {
 			View:        mainViewFeature.Name,
 			Key:         gocui.KeyEnter,
 			Modifier:    gocui.ModNone,
-			Handler:     gui.startQueue,
+			Handler:     gui.startPrimaryAction,
 			Display:     "enter",
 			Description: "Start",
 			Vital:       true,
@@ -790,7 +790,26 @@ func (gui *Gui) updateKeyBindingsView(g *gocui.Gui, viewName string) error {
 
 	for _, k := range gui.KeyBindings {
 		if k.View == viewName && k.Vital {
-			binding := keyBindingSeperator + ws + k.Display + ":" + ws + k.Description + ws
+			display := k.Display
+			description := k.Description
+			if viewName == mainViewFeature.Name && gui.State.Mode.ModeID == PushMode {
+				switch k.Key {
+				case gocui.KeySpace:
+					description = "Queue"
+					if selected := gui.getSelectedRepository(); selected != nil {
+						if queued, _ := gui.queueIsInTheQueue(selected); queued {
+							description = "Unqueue"
+						}
+					}
+				case gocui.KeyEnter:
+					if gui.queueLen() > 0 {
+						description = "Start Queue"
+					} else {
+						description = "Push Current"
+					}
+				}
+			}
+			binding := keyBindingSeperator + ws + display + ":" + ws + description + ws
 			fmt.Fprint(v, binding)
 		}
 	}

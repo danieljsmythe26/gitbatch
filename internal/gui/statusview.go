@@ -53,6 +53,32 @@ func (gui *Gui) initFocusStat(r *git.Repository) error {
 			}
 		}
 	}
+	if feedback, ok := gui.pushFeedbackFor(r); ok {
+		fmt.Fprintln(v, "")
+		if feedback.Success {
+			fmt.Fprintln(v, green.Sprint("Push complete: "+feedback.Message))
+		} else {
+			fmt.Fprintln(v, red.Sprint(feedback.Message))
+		}
+	}
+	if gui.State.Mode.ModeID == PushMode {
+		fmt.Fprintln(v, "")
+		queuedCount := gui.queueLen()
+		switch {
+		case queuedCount > 0:
+			fmt.Fprintf(v, "Push mode: %d repo(s) queued\n", queuedCount)
+			fmt.Fprintln(v, "Use [enter] in the repo list to start queued pushes")
+			fmt.Fprintln(v, "Use [tab] to return to the repo list")
+		case r.State.Branch.Upstream == nil:
+			fmt.Fprintln(v, "Push mode:")
+			fmt.Fprintln(v, "Push unavailable: this branch is not tracking a remote branch")
+		default:
+			fmt.Fprintln(v, "Push mode:")
+			fmt.Fprintln(v, "Use [enter] in the repo list to push this repo now")
+			fmt.Fprintln(v, "Use [space] in the repo list to add this repo to the batch queue")
+			fmt.Fprintln(v, "Use [P] here to push from the status pane")
+		}
+	}
 	files, err := command.Status(r)
 	if err != nil {
 		return err

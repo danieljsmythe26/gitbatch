@@ -32,16 +32,16 @@ var (
 )
 
 // open an auth view to get user credentials
-func (gui *Gui) openAuthenticationView(g *gocui.Gui, jobQueue *job.Queue, job *job.Job, returnViewName string) error {
+func (gui *Gui) openAuthenticationView(g *gocui.Gui, _ *job.Queue, job *job.Job, returnViewName string) error {
 	maxX, maxY := g.Size()
 	// lets add this job since it is removed from the queue
 	// also it is already unsuccessfully finished
-	if err := jobQueue.AddJob(job); err != nil {
+	if err := gui.queueAddJob(job); err != nil {
 		return err
 	}
 	jobRequiresAuth = job
 	if job.Repository.WorkStatus() != git.Fail {
-		if err := jobQueue.RemoveFromQueue(job.Repository); err != nil {
+		if err := gui.queueRemoveJob(job.Repository); err != nil {
 			return err
 		}
 	}
@@ -119,7 +119,7 @@ func (gui *Gui) submitAuthenticationView(g *gocui.Gui, v *gocui.View) error {
 	jobRequiresAuth.Repository.SetWorkStatus(git.Queued)
 
 	// add this job to the last of the queue
-	if err := gui.State.Queue.AddJob(jobRequiresAuth); err != nil {
+	if err := gui.queueAddJob(jobRequiresAuth); err != nil {
 		return err
 	}
 

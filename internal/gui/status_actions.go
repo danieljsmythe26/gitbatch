@@ -22,13 +22,16 @@ func (gui *Gui) pullSelectedRepository(g *gocui.Gui, v *gocui.View) error {
 func (gui *Gui) pushSelectedRepository(g *gocui.Gui, v *gocui.View) error {
 	r := gui.getSelectedRepository()
 	if r == nil || r.State.Branch.Upstream == nil {
+		gui.setPushFeedback(r, false, "Push unavailable: branch is not tracking a remote branch.")
 		return nil
 	}
 	if err := command.Push(r, &command.PushOptions{
 		RemoteName:  r.State.Remote.Name,
 		CommandMode: command.ModeLegacy,
 	}); err != nil {
+		gui.setPushFeedback(r, false, "Push failed: "+err.Error())
 		return err
 	}
+	gui.setPushFeedback(r, true, r.State.Message)
 	return gui.initFocusStat(r)
 }

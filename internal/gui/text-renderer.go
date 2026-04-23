@@ -166,12 +166,25 @@ func (gui *Gui) renderBranchName(r *git.Repository, rule *RepositoryDecorationRu
 	if gui.getSelectedRepository() == r {
 		branchColor = green
 	}
-	if !b.Clean {
-		n, in := align(branch, rule.MaxBranch-2, true)
-		return branchColor.Sprint(in) + " " + yellow.Sprint("✗") + strings.Repeat(" ", n)
+	successBadge := ""
+	if gui.hasSuccessfulPushFeedback(r) {
+		successBadge = " " + green.Sprint(successSymbol)
 	}
-	n, in := align(branch, rule.MaxBranch, true)
-	return branchColor.Sprint(in) + strings.Repeat(" ", n)
+	if !b.Clean {
+		maxBranchTextWidth := rule.MaxBranch - 2 - displayWidth(successBadge)
+		if maxBranchTextWidth < 1 {
+			maxBranchTextWidth = 1
+		}
+		n, in := align(branch, maxBranchTextWidth, true)
+		rendered := branchColor.Sprint(in) + " " + yellow.Sprint("✗") + successBadge
+		return rendered + strings.Repeat(" ", n)
+	}
+	maxBranchTextWidth := rule.MaxBranch - displayWidth(successBadge)
+	if maxBranchTextWidth < 1 {
+		maxBranchTextWidth = 1
+	}
+	n, in := align(branch, maxBranchTextWidth, true)
+	return branchColor.Sprint(in) + successBadge + strings.Repeat(" ", n)
 }
 
 // render ahead and behind info
@@ -200,7 +213,7 @@ func renderRevCount(r *git.Repository, rule *RepositoryDecorationRules) string {
 func (gui *Gui) renderStatus(r *git.Repository) string {
 	var status string
 	if r.WorkStatus() == git.Queued {
-		if inQueue, j := gui.State.Queue.IsInTheQueue(r); inQueue {
+		if inQueue, j := gui.queueIsInTheQueue(r); inQueue {
 			status = printQueued(r, j)
 		}
 	} else if r.WorkStatus() == git.Working {
