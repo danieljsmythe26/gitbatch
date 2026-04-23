@@ -68,9 +68,25 @@ func (gui *Gui) updateDynamicKeybindings() error {
 	}
 	modeBindings := make([]*KeyBinding, 0)
 
+	modeBindings = gui.dynamicModeBindings(t)
+	keybindings = append(keybindings, modeBindings...)
+	gui.KeyBindings = append(gui.KeyBindings, modeBindings...)
+	for _, k := range keybindings {
+		if err := gui.g.SetKeybinding(k.View, k.Key, k.Modifier, k.Handler); err != nil {
+			return err
+		}
+	}
+	v := gui.g.CurrentView()
+	if v.Name() == dynamicViewFeature.Name {
+		_ = gui.updateKeyBindingsView(gui.g, dynamicViewFeature.Name)
+	}
+	return nil
+}
+
+func (gui *Gui) dynamicModeBindings(t DynamicViewMode) []*KeyBinding {
 	switch t {
 	case CommitStatMode:
-		caseBindings := []*KeyBinding{
+		return []*KeyBinding{
 			{
 				View:        dynamicViewFeature.Name,
 				Key:         'b',
@@ -113,10 +129,8 @@ func (gui *Gui) updateDynamicKeybindings() error {
 				Vital:       true,
 			},
 		}
-		keybindings = append(keybindings, caseBindings...)
-		modeBindings = append(modeBindings, caseBindings...)
 	case CommitDiffMode:
-		caseBindings := []*KeyBinding{
+		return []*KeyBinding{
 			{
 				View:        dynamicViewFeature.Name,
 				Key:         'b',
@@ -183,10 +197,8 @@ func (gui *Gui) updateDynamicKeybindings() error {
 				Vital:       true,
 			},
 		}
-		keybindings = append(keybindings, caseBindings...)
-		modeBindings = append(modeBindings, caseBindings...)
 	case StashDiffMode:
-		caseBindings := []*KeyBinding{
+		return []*KeyBinding{
 			{
 				View:        dynamicViewFeature.Name,
 				Key:         'b',
@@ -229,10 +241,8 @@ func (gui *Gui) updateDynamicKeybindings() error {
 				Vital:       true,
 			},
 		}
-		keybindings = append(keybindings, caseBindings...)
-		modeBindings = append(modeBindings, caseBindings...)
 	case StashStatMode:
-		caseBindings := []*KeyBinding{
+		return []*KeyBinding{
 			{
 				View:        dynamicViewFeature.Name,
 				Key:         'b',
@@ -275,10 +285,8 @@ func (gui *Gui) updateDynamicKeybindings() error {
 				Vital:       true,
 			},
 		}
-		keybindings = append(keybindings, caseBindings...)
-		modeBindings = append(modeBindings, caseBindings...)
 	case StatusMode:
-		caseBindings := []*KeyBinding{
+		return []*KeyBinding{
 			{
 				View:        dynamicViewFeature.Name,
 				Key:         'b',
@@ -326,6 +334,14 @@ func (gui *Gui) updateDynamicKeybindings() error {
 				Handler:     gui.pushSelectedRepository,
 				Display:     "P",
 				Description: "push",
+				Vital:       true,
+			}, {
+				View:        dynamicViewFeature.Name,
+				Key:         'r',
+				Modifier:    gocui.ModNone,
+				Handler:     gui.refreshSelectedRepositoryStatus,
+				Display:     "r",
+				Description: "refresh",
 				Vital:       true,
 			}, {
 				View:        dynamicViewFeature.Name,
@@ -393,10 +409,8 @@ func (gui *Gui) updateDynamicKeybindings() error {
 				Vital:       true,
 			},
 		}
-		keybindings = append(keybindings, caseBindings...)
-		modeBindings = append(modeBindings, caseBindings...)
 	case FileDiffMode:
-		caseBindings := []*KeyBinding{
+		return []*KeyBinding{
 			{
 				View:        dynamicViewFeature.Name,
 				Key:         'b',
@@ -463,20 +477,7 @@ func (gui *Gui) updateDynamicKeybindings() error {
 				Vital:       true,
 			},
 		}
-		keybindings = append(keybindings, caseBindings...)
-		modeBindings = append(modeBindings, caseBindings...)
 	default:
-
+		return nil
 	}
-	gui.KeyBindings = append(gui.KeyBindings, modeBindings...)
-	for _, k := range keybindings {
-		if err := gui.g.SetKeybinding(k.View, k.Key, k.Modifier, k.Handler); err != nil {
-			return err
-		}
-	}
-	v := gui.g.CurrentView()
-	if v.Name() == dynamicViewFeature.Name {
-		_ = gui.updateKeyBindingsView(gui.g, dynamicViewFeature.Name)
-	}
-	return nil
 }

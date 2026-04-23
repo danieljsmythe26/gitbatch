@@ -7,6 +7,7 @@ import (
 
 	"github.com/isacikgoz/gitbatch/internal/git"
 	"github.com/isacikgoz/gitbatch/internal/job"
+	"github.com/jroimartin/gocui"
 )
 
 func TestNewPreservesCheckoutMode(t *testing.T) {
@@ -79,5 +80,36 @@ func TestPushFeedbackExpires(t *testing.T) {
 
 	if _, ok := gui.pushFeedbackFor(repo); ok {
 		t.Fatalf("expected push feedback to expire")
+	}
+}
+
+func TestStatusModeBindingsIncludeRefreshAndResetAll(t *testing.T) {
+	gui, err := New(string(FetchMode), nil)
+	if err != nil {
+		t.Fatalf("New returned error: %v", err)
+	}
+
+	bindings := gui.dynamicModeBindings(StatusMode)
+
+	var hasRefresh bool
+	var hasResetAll bool
+	for _, binding := range bindings {
+		switch binding.Key {
+		case 'r':
+			if binding.Display == "r" && binding.Description == "refresh" && binding.Vital {
+				hasRefresh = true
+			}
+		case gocui.KeyCtrlR:
+			if binding.Display == "c-r" && binding.Description == "reset all" && binding.Vital {
+				hasResetAll = true
+			}
+		}
+	}
+
+	if !hasRefresh {
+		t.Fatalf("expected status mode to include plain r refresh binding")
+	}
+	if !hasResetAll {
+		t.Fatalf("expected status mode to retain ctrl-r reset all binding")
 	}
 }
