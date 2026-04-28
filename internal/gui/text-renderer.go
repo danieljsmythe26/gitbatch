@@ -68,7 +68,7 @@ type RepositoryDecorationRules struct {
 // repository render rules
 func (gui *Gui) renderRules() *RepositoryDecorationRules {
 	rules := &RepositoryDecorationRules{
-		MaxBranch: maxBranchColumnWidth,
+		MaxBranch: minBranchColumnWidth,
 		MaxName:   minRepoColumnWidth,
 	}
 
@@ -79,13 +79,20 @@ func (gui *Gui) renderRules() *RepositoryDecorationRules {
 		if len(r.State.Branch.Pushables) > rules.MaxPushables {
 			rules.MaxPushables = len(r.State.Branch.Pushables)
 		}
-		if len(r.Name) > maxRepositoryLength {
-			rules.MaxName = maxRepositoryLength
+		// reserve 2 cols for the dirty " ✗" marker so dirty branches don't get truncated
+		if w := len(r.State.Branch.Name) + 2; w > rules.MaxBranch {
+			rules.MaxBranch = w
+		}
+		if len(r.Name) > rules.MaxName {
+			rules.MaxName = len(r.Name)
 		}
 	}
 
-	if rules.MaxBranch > maxBranchColumnWidth {
-		rules.MaxBranch = maxBranchColumnWidth
+	if rules.MaxBranch > maxBranchLength {
+		rules.MaxBranch = maxBranchLength
+	}
+	if rules.MaxName > maxRepositoryLength {
+		rules.MaxName = maxRepositoryLength
 	}
 
 	if mainView, err := gui.g.View(mainViewFeature.Name); err == nil {
@@ -99,9 +106,6 @@ func (gui *Gui) renderRules() *RepositoryDecorationRules {
 			}
 
 			branchWidth := rules.MaxBranch
-			if branchWidth > maxBranchColumnWidth {
-				branchWidth = maxBranchColumnWidth
-			}
 			if branchWidth < minBranchColumnWidth {
 				branchWidth = minBranchColumnWidth
 			}
@@ -463,11 +467,7 @@ func decorateDiffStat(in string, sum bool) string {
 
 // align text with whitespaces
 func align(in string, max int, trim bool) (int, string) {
-	realmax := 50
 	il := displayWidth(in)
-	if max > realmax {
-		max = 50
-	}
 	if trim && il > max {
 		runes := []rune(in)
 		cut := max - 2
