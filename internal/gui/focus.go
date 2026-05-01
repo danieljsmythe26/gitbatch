@@ -3,11 +3,11 @@ package gui
 import "github.com/jroimartin/gocui"
 
 var (
-	focusViews = []viewFeature{commitViewFeature, dynamicViewFeature, remoteViewFeature, branchViewFeature, stashViewFeature}
+	focusViews = []viewFeature{dynamicViewFeature, commitViewFeature, remoteViewFeature, branchViewFeature, stashViewFeature}
 	paneViews  = []viewFeature{
 		mainViewFeature,
-		commitViewFeature,
 		dynamicViewFeature,
+		commitViewFeature,
 		remoteViewFeature,
 		branchViewFeature,
 		stashViewFeature,
@@ -34,7 +34,7 @@ func (gui *Gui) focusLayout(g *gocui.Gui) error {
 	return gui.overviewLayout(g)
 }
 
-// evolve the layout to focus layout and focus to commitview also initialize
+// evolve the layout to focus layout and focus to status view also initialize
 // some stuff
 func (gui *Gui) focusToRepository(g *gocui.Gui, v *gocui.View) error {
 	r := gui.getSelectedRepository()
@@ -45,7 +45,7 @@ func (gui *Gui) focusToRepository(g *gocui.Gui, v *gocui.View) error {
 	if err := gui.renderRepositoryDetails(r, true); err != nil {
 		return err
 	}
-	targetViewName := commitViewFeature.Name
+	targetViewName := dynamicViewFeature.Name
 	if v != nil {
 		switch v.Name() {
 		case mainViewFeature.Name, commitViewFeature.Name, dynamicViewFeature.Name, remoteViewFeature.Name, branchViewFeature.Name, stashViewFeature.Name:

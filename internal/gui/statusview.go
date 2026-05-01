@@ -118,7 +118,7 @@ func (gui *Gui) initFocusStat(r *git.Repository) error {
 			_ = gui.statusCursorUp(gui.g, v)
 		}
 	}
-	return nil
+	return gui.reflowMiddleColumn()
 }
 
 // moves the cursor downwards for the main view and if it goes to bottom it

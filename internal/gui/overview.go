@@ -1,7 +1,18 @@
 package gui
 
 import (
+	"strings"
+
 	"github.com/jroimartin/gocui"
+)
+
+const (
+	leftColumnPercent    = 40
+	middleColumnPercent  = 40
+	statusMaxPercent     = 60
+	statusDefaultPercent = 35
+	minDetailPaneHeight  = 4
+	minCommitPaneHeight  = 8
 )
 
 // set the layout and create views with their default size, name etc. values
@@ -9,67 +20,9 @@ import (
 func (gui *Gui) overviewLayout(g *gocui.Gui) error {
 	g.SelFgColor = gocui.ColorGreen
 	maxX, maxY := g.Size()
-	leftContentWidth := int(0.32 * float32(maxX))
-	if leftContentWidth < 50 {
-		leftContentWidth = 50
-	}
-	leftWidth := leftContentWidth + 2
-	minPaneWidth := 2
-
-	rightWidth := int(0.18 * float32(maxX))
-	if rightWidth < minPaneWidth {
-		rightWidth = minPaneWidth
-	}
-
-	commitMinWidth := 20
-	statusMinWidth := 20
-	rightMinWidth := 28
-	middleMinWidth := commitMinWidth + statusMinWidth
-	maxLeftWidth := maxX - rightMinWidth - middleMinWidth
-	if maxLeftWidth < 30 {
-		maxLeftWidth = 30
-	}
-	if leftWidth > maxLeftWidth {
-		leftWidth = maxLeftWidth
-	}
-	if maxX-leftWidth < minPaneWidth*3 {
-		leftWidth = maxX - (minPaneWidth * 3)
-	}
-	if leftWidth < 10 {
-		leftWidth = 10
-	}
-
-	detailRight := maxX - rightWidth
-	maxRightWidth := maxX - leftWidth - (minPaneWidth * 2)
-	if maxRightWidth < minPaneWidth {
-		maxRightWidth = minPaneWidth
-	}
-	if rightWidth > maxRightWidth {
-		rightWidth = maxRightWidth
-	}
-	if detailRight < leftWidth+(minPaneWidth*2) {
-		detailRight = leftWidth + (minPaneWidth * 2)
-	}
-	if detailRight > maxX-minPaneWidth {
-		detailRight = maxX - minPaneWidth
-	}
-
-	detailMiddle := leftWidth + (detailRight-leftWidth)/2
-	if detailMiddle-leftWidth < minPaneWidth {
-		detailMiddle = leftWidth + minPaneWidth
-	}
-	if detailRight-detailMiddle < minPaneWidth {
-		detailMiddle = detailRight - minPaneWidth
-	}
-	if detailMiddle <= leftWidth {
-		detailMiddle = leftWidth + minPaneWidth
-	}
-	if detailRight <= detailMiddle {
-		detailRight = detailMiddle + minPaneWidth
-	}
-	if detailRight > maxX-1 {
-		detailRight = maxX - 1
-	}
+	leftWidth, middleWidth := gui.overviewColumnWidths(maxX)
+	detailRight := leftWidth + middleWidth
+	statusBottom := gui.statusPaneBottom(maxY)
 	quarterY := int(0.25 * float32(maxY))
 	threeQuarterY := int(0.75 * float32(maxY))
 
@@ -90,19 +43,19 @@ func (gui *Gui) overviewLayout(g *gocui.Gui) error {
 		}
 		v.Frame = false
 	}
-	if v, err := g.SetView(commitViewFeature.Name, leftWidth, 0, detailMiddle-1, maxY-2); err != nil {
+	if v, err := g.SetView(dynamicViewFeature.Name, leftWidth, 0, detailRight-1, statusBottom-1); err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		v.Title = string(StatusMode)
+		v.Wrap = false
+		v.Autoscroll = false
+	}
+	if v, err := g.SetView(commitViewFeature.Name, leftWidth, statusBottom, detailRight-1, maxY-2); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
 		v.Title = commitViewFeature.Title
-		v.Wrap = false
-		v.Autoscroll = false
-	}
-	if v, err := g.SetView(dynamicViewFeature.Name, detailMiddle, 0, detailRight-1, maxY-2); err != nil {
-		if err != gocui.ErrUnknownView {
-			return err
-		}
-		v.Title = dynamicViewFeature.Title
 		v.Wrap = false
 		v.Autoscroll = false
 	}
@@ -166,6 +119,91 @@ func (gui *Gui) overviewLayout(g *gocui.Gui) error {
 		v.FgColor = gocui.ColorBlack
 		v.Frame = false
 		_ = gui.updateKeyBindingsView(g, mainViewFeature.Name)
+	}
+	return nil
+}
+
+func (gui *Gui) overviewColumnWidths(maxX int) (int, int) {
+	leftWidth := maxX * leftColumnPercent / 100
+	middleWidth := maxX * middleColumnPercent / 100
+
+	minColumnWidth := 4
+	if leftWidth < minColumnWidth {
+		leftWidth = minColumnWidth
+	}
+	if middleWidth < minColumnWidth {
+		middleWidth = minColumnWidth
+	}
+	if maxX-leftWidth-middleWidth < minColumnWidth {
+		middleWidth = maxX - leftWidth - minColumnWidth
+	}
+	if middleWidth < minColumnWidth {
+		middleWidth = minColumnWidth
+		leftWidth = maxX - middleWidth - minColumnWidth
+	}
+	if leftWidth < minColumnWidth {
+		leftWidth = minColumnWidth
+	}
+	return leftWidth, middleWidth
+}
+
+func (gui *Gui) statusPaneBottom(maxY int) int {
+	detailBottom := maxY - 2
+	if detailBottom < minDetailPaneHeight*2 {
+		return detailBottom / 2
+	}
+
+	minStatusHeight := minDetailPaneHeight
+	maxStatusHeight := detailBottom * statusMaxPercent / 100
+	if maxStatusHeight < minStatusHeight {
+		maxStatusHeight = minStatusHeight
+	}
+	if detailBottom-minCommitPaneHeight < maxStatusHeight {
+		maxStatusHeight = detailBottom - minCommitPaneHeight
+	}
+	if maxStatusHeight < minStatusHeight {
+		maxStatusHeight = minStatusHeight
+	}
+
+	statusHeight := detailBottom * statusDefaultPercent / 100
+	if dynamicView, err := gui.g.View(dynamicViewFeature.Name); err == nil {
+		if lineCount := visibleBufferLineCount(dynamicView.BufferLines()); lineCount > 0 {
+			statusHeight = lineCount + 3
+		}
+	}
+
+	if statusHeight < minStatusHeight {
+		statusHeight = minStatusHeight
+	}
+	if statusHeight > maxStatusHeight {
+		statusHeight = maxStatusHeight
+	}
+	return statusHeight
+}
+
+func visibleBufferLineCount(lines []string) int {
+	for i := len(lines) - 1; i >= 0; i-- {
+		if strings.TrimSpace(lines[i]) != "" {
+			return i + 1
+		}
+	}
+	return 0
+}
+
+func (gui *Gui) reflowMiddleColumn() error {
+	if gui.g == nil {
+		return nil
+	}
+	maxX, maxY := gui.g.Size()
+	leftWidth, middleWidth := gui.overviewColumnWidths(maxX)
+	detailRight := leftWidth + middleWidth
+	statusBottom := gui.statusPaneBottom(maxY)
+
+	if _, err := gui.g.SetView(dynamicViewFeature.Name, leftWidth, 0, detailRight-1, statusBottom-1); err != nil && err != gocui.ErrUnknownView {
+		return err
+	}
+	if _, err := gui.g.SetView(commitViewFeature.Name, leftWidth, statusBottom, detailRight-1, maxY-2); err != nil && err != gocui.ErrUnknownView {
+		return err
 	}
 	return nil
 }
