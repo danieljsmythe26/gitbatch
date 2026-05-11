@@ -66,6 +66,7 @@ func (gui *Gui) renderCommits(r *git.Repository) error {
 	if err != nil {
 		return err
 	}
+	v.Title = branchSummaryTitle(summaries)
 	width, _ := v.Size()
 	si := 0
 	for i, summary := range summaries {
@@ -76,6 +77,24 @@ func (gui *Gui) renderCommits(r *git.Repository) error {
 	}
 	_ = adjustAnchor(si, len(summaries), v)
 	return nil
+}
+
+func branchSummaryTitle(summaries []*git.BranchSummary) string {
+	worktrees := 0
+	stale := 0
+	deletable := 0
+	for _, summary := range summaries {
+		if summary.Worktree {
+			worktrees++
+		}
+		if !summary.Current && summary.AgeDays >= branchStaleAgeDays {
+			stale++
+		}
+		if summary.Merged || summary.UpstreamGone {
+			deletable++
+		}
+	}
+	return fmt.Sprintf(" Branches (%d) Worktrees (%d) Stale (%d) Delete (%d) ", len(summaries), worktrees, stale, deletable)
 }
 
 func (gui *Gui) branchSummaryLabel(summary *git.BranchSummary, width int) string {

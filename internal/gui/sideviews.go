@@ -73,6 +73,7 @@ func (gui *Gui) renderBranches(r *git.Repository) error {
 		return nil
 	}
 	cs := r.State.Branch.Commits
+	v.Title = fmt.Sprintf(" Commits (%d) ", len(cs))
 	fmt.Fprintln(v, ws+yellow.Sprint("*******")+" "+yellow.Sprint("Current State"))
 	for _, c := range cs {
 		fmt.Fprintln(v, tab+commitLabel(c, false))

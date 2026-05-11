@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	leftColumnPercent    = 40
-	middleColumnPercent  = 40
+	leftColumnPercent    = 32
+	middleColumnPercent  = 32
 	statusMaxPercent     = 60
 	statusDefaultPercent = 35
 	minDetailPaneHeight  = 4
