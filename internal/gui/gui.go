@@ -82,12 +82,12 @@ var (
 	mainViewFeature          = viewFeature{Name: "main", Title: " Matched Repositories "}
 	mainViewFrameFeature     = viewFeature{Name: "mainframe", Title: " Matched Repositories "}
 	mainHeaderViewFeature    = viewFeature{Name: "mainheader", Title: " Repository Header "}
-	branchViewFeature        = viewFeature{Name: "branch", Title: " Branches "}
+	branchViewFeature        = viewFeature{Name: "branch", Title: " Commits "}
 	batchBranchViewFeature   = viewFeature{Name: "batch-branch", Title: " Select Branch "}
 	suggestBranchViewFeature = viewFeature{Name: "suggest-branch", Title: " Enter New Branch Name "}
 	remoteViewFeature        = viewFeature{Name: "remotes", Title: " Remotes "}
 	remoteBranchViewFeature  = viewFeature{Name: "remotebranches", Title: " Remote Branches "}
-	commitViewFeature        = viewFeature{Name: "commits", Title: " Commits "}
+	commitViewFeature        = viewFeature{Name: "commits", Title: " Branches "}
 	keybindingsViewFeature   = viewFeature{Name: "keybindings", Title: " Keybindings "}
 	cheatSheetViewFeature    = viewFeature{Name: "cheatsheet", Title: " Application Controls "}
 	errorViewFeature         = viewFeature{Name: "error", Title: " Error "}

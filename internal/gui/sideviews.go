@@ -62,28 +62,22 @@ func (gui *Gui) renderSideViews(r *git.Repository) error {
 	return nil
 }
 
-// updates the branchesview for given entity
+// updates the right-side commits view for given entity
 func (gui *Gui) renderBranches(r *git.Repository) error {
 	v, err := gui.g.View(branchViewFeature.Name)
 	if err != nil {
 		return err
 	}
 	v.Clear()
-	bs := r.Branches
 	if r.State.Branch == nil {
 		return nil
 	}
-	bc := r.State.Branch
-	si := 0
-	for i, b := range bs {
-		if b.Name == bc.Name {
-			si = i
-			fmt.Fprintln(v, ws+green.Sprint(b.Name))
-			continue
-		}
-		fmt.Fprintln(v, tab+b.Name)
+	cs := r.State.Branch.Commits
+	fmt.Fprintln(v, ws+yellow.Sprint("*******")+" "+yellow.Sprint("Current State"))
+	for _, c := range cs {
+		fmt.Fprintln(v, tab+commitLabel(c, false))
 	}
-	_ = adjustAnchor(si, len(bs), v)
+	_ = adjustAnchor(0, len(cs)+1, v)
 	return nil
 }
 
@@ -142,11 +136,9 @@ func (gui *Gui) selectSideItem(g *gocui.Gui, v *gocui.View) error {
 	ix := oy + cy
 	var err error
 	if v.Name() == commitViewFeature.Name {
-		r.State.Branch.State.Commit = r.State.Branch.Commits[ix]
-		err = gui.renderCommits(r)
+		return nil
 	} else if v.Name() == branchViewFeature.Name {
-		_ = r.Checkout(r.Branches[ix])
-		err = gui.renderBranches(r)
+		return nil
 	} else if v.Name() == remoteBranchViewFeature.Name {
 		// r.State.Remote.Branch = r.State.Remote.Branches[ix]
 		err = gui.renderRemoteBranches(r)

@@ -2,9 +2,17 @@ package gui
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/isacikgoz/gitbatch/internal/git"
 	"github.com/jroimartin/gocui"
+)
+
+const (
+	branchOldAgeDays   = 14
+	branchStaleAgeDays = 30
 )
 
 // listens the event -> "branch.updated"
@@ -30,9 +38,6 @@ func (gui *Gui) commitCursorDown(g *gocui.Gui, v *gocui.View) error {
 		v.EditDelete(true)
 		pos := cy + oy + 1
 		_ = adjustAnchor(pos, ly, v)
-		if err := gui.commitStats(pos); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -46,38 +51,82 @@ func (gui *Gui) commitCursorUp(g *gocui.Gui, v *gocui.View) error {
 		v.EditDelete(true)
 		pos := cy + oy - 1
 		_ = adjustAnchor(pos, ly, v)
-		if pos >= 0 {
-			if err := gui.commitStats(cy + oy - 1); err != nil {
-				return err
-			}
-		}
 	}
 	return nil
 }
 
-// updates the commitsview for given entity
+// updates the large branch overview for given entity
 func (gui *Gui) renderCommits(r *git.Repository) error {
 	v, err := gui.g.View(commitViewFeature.Name)
 	if err != nil {
 		return err
 	}
 	v.Clear()
-	cs := r.State.Branch.Commits
-	// bc := r.State.Branch.State.Commit
-	si := 0
-	fmt.Fprintln(v, " "+yellow.Sprint("*******")+" "+yellow.Sprint("Current State"))
-
-	for _, c := range cs {
-		// if c.Hash == bc.Hash {
-		// 	si = i
-		// 	fmt.Fprintln(v, ws+commitLabel(c, false))
-		// 	continue
-		// }
-
-		fmt.Fprintln(v, tab+commitLabel(c, false))
+	summaries, err := r.BranchSummaries(time.Now())
+	if err != nil {
+		return err
 	}
-	_ = adjustAnchor(si, len(cs), v)
+	width, _ := v.Size()
+	si := 0
+	for i, summary := range summaries {
+		if summary.Current {
+			si = i
+		}
+		fmt.Fprintln(v, gui.branchSummaryLabel(summary, width))
+	}
+	_ = adjustAnchor(si, len(summaries), v)
 	return nil
+}
+
+func (gui *Gui) branchSummaryLabel(summary *git.BranchSummary, width int) string {
+	indicator := unselectedIndicator
+	branchColor := cyan
+	if summary.Current {
+		indicator = green.Sprint(selectionIndicator)
+		branchColor = green
+	}
+
+	status := gui.branchSummaryStatus(summary)
+	statusWidth := displayWidth(stripANSI(status))
+	nameWidth := width - displayWidth(indicator) - statusWidth - 2
+	if nameWidth < minBranchColumnWidth {
+		nameWidth = minBranchColumnWidth
+	}
+	n, name := align(summary.Name, nameWidth, true)
+	return indicator + branchColor.Sprint(name) + strings.Repeat(" ", n+2) + status
+}
+
+func (gui *Gui) branchSummaryStatus(summary *git.BranchSummary) string {
+	labels := make([]string, 0)
+	if summary.Current {
+		labels = append(labels, green.Sprint("* current"))
+	}
+	if summary.Dirty {
+		labels = append(labels, yellow.Sprint("dirty"))
+	}
+	if summary.Worktree {
+		labels = append(labels, yellow.Sprint("wt"))
+	}
+	if summary.UpstreamGone {
+		labels = append(labels, red.Sprint("gone del"))
+	} else if summary.Merged {
+		labels = append(labels, red.Sprint("merged del"))
+	}
+	if summary.Ahead > 0 {
+		labels = append(labels, blue.Sprint("+"+strconv.Itoa(summary.Ahead)))
+	}
+	if summary.Behind > 0 {
+		labels = append(labels, yellow.Sprint("-"+strconv.Itoa(summary.Behind)))
+	}
+	if !summary.Current && summary.AgeDays >= branchStaleAgeDays {
+		labels = append(labels, yellow.Sprint("stale"))
+	} else if !summary.Current && summary.AgeDays >= branchOldAgeDays {
+		labels = append(labels, yellow.Sprint("old"))
+	}
+	if len(labels) == 0 {
+		return cyan.Sprint("clean")
+	}
+	return strings.Join(labels, ws)
 }
 
 // moves cursor down for a page size
@@ -109,9 +158,6 @@ func (gui *Gui) commitCursorTop(g *gocui.Gui, v *gocui.View) error {
 		lr := len(v.BufferLines())
 
 		_ = adjustAnchor(0, lr, v)
-		if err := gui.commitStats(0); err != nil {
-			return err
-		}
 	}
 	return nil
 }

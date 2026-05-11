@@ -358,7 +358,7 @@ func (gui *Gui) generateKeybindings() error {
 			Modifier:    gocui.ModNone,
 			Handler:     gui.focusBranchPane,
 			Display:     "b",
-			Description: "Branches Pane",
+			Description: "Commits Pane",
 			Vital:       true,
 		}, {
 			View:        mainViewFeature.Name,
@@ -423,14 +423,6 @@ func (gui *Gui) generateKeybindings() error {
 			Handler:     gui.closeRemoteBranchesView,
 			Display:     "q",
 			Description: "close/cancel",
-			Vital:       true,
-		}, {
-			View:        branchViewFeature.Name,
-			Key:         'u',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.setUpstreamToBranch,
-			Display:     "u",
-			Description: "Set Upstream",
 			Vital:       true,
 		}, {
 			View:        branchViewFeature.Name,
@@ -514,22 +506,6 @@ func (gui *Gui) generateKeybindings() error {
 			Display:     "k",
 			Description: "Cursor Up",
 			Vital:       false,
-		}, {
-			View:        commitViewFeature.Name,
-			Key:         'd',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.commitDiff,
-			Display:     "d",
-			Description: "Show commit diff",
-			Vital:       true,
-		}, {
-			View:        commitViewFeature.Name,
-			Key:         's',
-			Modifier:    gocui.ModNone,
-			Handler:     gui.commitStat,
-			Display:     "s",
-			Description: "Show commit stat",
-			Vital:       true,
 		}, {
 			View:        commitViewFeature.Name,
 			Key:         'q',
