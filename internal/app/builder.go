@@ -15,11 +15,12 @@ type App struct {
 
 // Config is an assembler data to initiate a setup
 type Config struct {
-	Directories []string
-	LogLevel    string
-	Depth       int
-	QuickMode   bool
-	Mode        string
+	Directories        []string
+	LogLevel           string
+	Depth              int
+	QuickMode          bool
+	Mode               string
+	PinnedRepositories []string
 }
 
 // New will handle pre-required operations. It is designed to be a wrapper for
@@ -47,7 +48,7 @@ func (a *App) Run() error {
 		return a.execQuickMode(dirs)
 	}
 	// create a gui.Gui struct and run the gui
-	gui, err := gui.New(a.Config.Mode, dirs)
+	gui, err := gui.New(a.Config.Mode, dirs, a.Config.PinnedRepositories)
 	if err != nil {
 		return err
 	}
@@ -69,6 +70,9 @@ func overrideConfig(appConfig, setupConfig *Config) *Config {
 	}
 	if len(setupConfig.Mode) > 0 {
 		appConfig.Mode = setupConfig.Mode
+	}
+	if len(setupConfig.PinnedRepositories) > 0 {
+		appConfig.PinnedRepositories = setupConfig.PinnedRepositories
 	}
 	return appConfig
 }

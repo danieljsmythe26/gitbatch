@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewPreservesCheckoutMode(t *testing.T) {
-	gui, err := New(string(CheckoutMode), nil)
+	gui, err := New(string(CheckoutMode), nil, nil)
 	if err != nil {
 		t.Fatalf("New returned error: %v", err)
 	}
@@ -22,7 +22,7 @@ func TestNewPreservesCheckoutMode(t *testing.T) {
 }
 
 func TestJobsForPrimaryActionPushesCurrentRepoWhenQueueEmpty(t *testing.T) {
-	gui, err := New(string(PushMode), nil)
+	gui, err := New(string(PushMode), nil, nil)
 	if err != nil {
 		t.Fatalf("New returned error: %v", err)
 	}
@@ -84,7 +84,7 @@ func TestPushFeedbackExpires(t *testing.T) {
 }
 
 func TestStatusModeBindingsIncludeRefreshAndResetAll(t *testing.T) {
-	gui, err := New(string(FetchMode), nil)
+	gui, err := New(string(FetchMode), nil, nil)
 	if err != nil {
 		t.Fatalf("New returned error: %v", err)
 	}
@@ -111,5 +111,83 @@ func TestStatusModeBindingsIncludeRefreshAndResetAll(t *testing.T) {
 	}
 	if !hasResetAll {
 		t.Fatalf("expected status mode to retain ctrl-r reset all binding")
+	}
+}
+
+func TestMainBindingsIncludeRefresh(t *testing.T) {
+	gui, err := New(string(FetchMode), nil, nil)
+	if err != nil {
+		t.Fatalf("New returned error: %v", err)
+	}
+	if err := gui.generateKeybindings(); err != nil {
+		t.Fatalf("generateKeybindings returned error: %v", err)
+	}
+
+	for _, binding := range gui.KeyBindings {
+		if binding.View == mainViewFeature.Name && binding.Key == 'r' && binding.Description == "Refresh" && binding.Vital {
+			return
+		}
+	}
+	t.Fatalf("expected main view to include r Refresh binding")
+}
+
+func TestSmartRowsGroupPinnedAttentionRecentAndQuiet(t *testing.T) {
+	now := time.Now()
+	pinned := testRepo("ai-estimates-app", now.Add(-48*time.Hour), true, "0", "0")
+	attention := testRepo("expenses", now.Add(-72*time.Hour), false, "0", "0")
+	recent := testRepo("gitbatch", now.Add(-1*time.Hour), true, "0", "0")
+	quiet := testRepo("agent-config", now.Add(-14*24*time.Hour), true, "0", "0")
+
+	gui := &Gui{
+		State: guiState{
+			Repositories:       []*git.Repository{quiet, recent, attention, pinned},
+			PinnedRepositories: []string{"ai-estimates-app"},
+			SortMode:           repositorySortSmart,
+		},
+	}
+
+	gui.sortRepositoriesSmart()
+	rows := gui.mainRows()
+
+	got := make([]string, 0, len(rows))
+	for _, row := range rows {
+		if row.Repository != nil {
+			got = append(got, row.Repository.Name)
+			continue
+		}
+		got = append(got, row.Label)
+	}
+	want := []string{
+		"Pinned",
+		"ai-estimates-app",
+		"Needs attention",
+		"expenses",
+		"Recent",
+		"gitbatch",
+		"Quiet",
+		"agent-config",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("smart rows length mismatch:\ngot  %v\nwant %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("smart rows mismatch:\ngot  %v\nwant %v", got, want)
+		}
+	}
+}
+
+func testRepo(name string, modTime time.Time, clean bool, pushables string, pullables string) *git.Repository {
+	return &git.Repository{
+		Name:    name,
+		ModTime: modTime,
+		State: &git.RepositoryState{
+			Branch: &git.Branch{
+				Name:      "main",
+				Clean:     clean,
+				Pushables: pushables,
+				Pullables: pullables,
+			},
+		},
 	}
 }

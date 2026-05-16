@@ -278,6 +278,9 @@ func (gui *Gui) renderSelectionIndicator(r *git.Repository) string {
 	if gui.getSelectedRepository() == r {
 		return green.Sprint(selectionIndicator)
 	}
+	if _, ok := gui.pinnedRepositoryRank(r); ok {
+		return yellow.Sprint("★" + ws)
+	}
 	return unselectedIndicator
 }
 

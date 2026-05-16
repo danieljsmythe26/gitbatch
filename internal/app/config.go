@@ -28,7 +28,10 @@ var (
 	quickKeyDefault     = false
 	recursionKey        = "recursion"
 	recursionKeyDefault = 1
+	pinnedReposKey      = "pinned_repositories"
 )
+
+var pinnedReposKeyDefault = []string{"ai-estimates-app", "design-build-automation"}
 
 // loadConfiguration returns a Config struct is filled
 func loadConfiguration() (*Config, error) {
@@ -49,10 +52,11 @@ func loadConfiguration() (*Config, error) {
 		directories = viper.GetStringSlice(pathsKey)
 	}
 	config := &Config{
-		Directories: directories,
-		Depth:       viper.GetInt(recursionKey),
-		QuickMode:   viper.GetBool(quickKey),
-		Mode:        viper.GetString(modeKey),
+		Directories:        directories,
+		Depth:              viper.GetInt(recursionKey),
+		QuickMode:          viper.GetBool(quickKey),
+		Mode:               viper.GetString(modeKey),
+		PinnedRepositories: viper.GetStringSlice(pinnedReposKey),
 	}
 	return config, nil
 }
@@ -62,6 +66,7 @@ func setDefaults() error {
 	viper.SetDefault(quickKey, quickKeyDefault)
 	viper.SetDefault(recursionKey, recursionKeyDefault)
 	viper.SetDefault(modeKey, modeKeyDefault)
+	viper.SetDefault(pinnedReposKey, pinnedReposKeyDefault)
 	// viper.SetDefault(pathsKey, pathsKeyDefault)
 	return nil
 }

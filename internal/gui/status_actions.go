@@ -10,15 +10,36 @@ func (gui *Gui) refreshSelectedRepositoryStatus(g *gocui.Gui, v *gocui.View) err
 	if r == nil || r.State == nil || r.State.Remote == nil {
 		return nil
 	}
+	returnView := dynamicViewFeature.Name
+	if v != nil && v.Name() != "" {
+		returnView = v.Name()
+	}
 	if err := command.Fetch(r, &command.FetchOptions{
 		RemoteName:  r.State.Remote.Name,
 		CommandMode: command.ModeNative,
 	}); err != nil {
 		return gui.openErrorView(g, "Refresh failed: "+err.Error(),
 			"Close this dialog to return to repository status.",
-			dynamicViewFeature.Name)
+			returnView)
 	}
-	return gui.initFocusStat(r)
+	return gui.renderMain()
+}
+
+func (gui *Gui) reloadSelectedRepositoryStatus(g *gocui.Gui, v *gocui.View) error {
+	r := gui.getSelectedRepository()
+	if r == nil || r.State == nil {
+		return nil
+	}
+	returnView := mainViewFeature.Name
+	if v != nil && v.Name() != "" {
+		returnView = v.Name()
+	}
+	if err := r.Refresh(); err != nil {
+		return gui.openErrorView(g, "Refresh failed: "+err.Error(),
+			"Close this dialog to return to repository status.",
+			returnView)
+	}
+	return gui.renderMain()
 }
 
 func (gui *Gui) pullSelectedRepository(g *gocui.Gui, v *gocui.View) error {

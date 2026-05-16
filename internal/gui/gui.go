@@ -26,15 +26,18 @@ type Gui struct {
 // guiState struct holds the repositories, directories, mode and queue of the
 // gui object. These values are not static
 type guiState struct {
-	Repositories  []*git.Repository
-	Directories   []string
-	Mode          mode
-	Queue         *job.Queue
-	FailoverQueue *job.Queue
-	targetBranch  string
-	detailRepoID  string
-	pushFeedback  map[string]pushFeedbackState
-	totalBranches []*branchCountMap
+	Repositories       []*git.Repository
+	Directories        []string
+	Mode               mode
+	Queue              *job.Queue
+	FailoverQueue      *job.Queue
+	PinnedRepositories []string
+	SortMode           repositorySortMode
+	mainRows           []mainRow
+	targetBranch       string
+	detailRepoID       string
+	pushFeedback       map[string]pushFeedbackState
+	totalBranches      []*branchCountMap
 }
 
 type pushFeedbackState struct {
@@ -60,6 +63,19 @@ type mode struct {
 type branchCountMap struct {
 	BranchName string
 	Count      int
+}
+
+type repositorySortMode string
+
+const (
+	repositorySortSmart repositorySortMode = "smart"
+	repositorySortName  repositorySortMode = "name"
+	repositorySortDate  repositorySortMode = "date"
+)
+
+type mainRow struct {
+	Repository *git.Repository
+	Label      string
 }
 
 // ModeID is the mode indicator for the gui
@@ -106,12 +122,14 @@ var (
 )
 
 // New creates a Gui object and fill it's state related entities
-func New(mode string, directories []string) (*Gui, error) {
+func New(mode string, directories []string, pinnedRepositories []string) (*Gui, error) {
 	initialState := guiState{
-		Directories:   directories,
-		Mode:          fetchMode,
-		Queue:         job.CreateJobQueue(),
-		FailoverQueue: job.CreateJobQueue(),
+		Directories:        directories,
+		Mode:               fetchMode,
+		Queue:              job.CreateJobQueue(),
+		FailoverQueue:      job.CreateJobQueue(),
+		PinnedRepositories: pinnedRepositories,
+		SortMode:           repositorySortSmart,
 	}
 	gui := &Gui{
 		State:      initialState,
@@ -164,28 +182,44 @@ func (gui *Gui) Run() error {
 // add repository to gui's own slice and register listeners
 func (gui *Gui) loadRepository(r *git.Repository) {
 	rs := gui.State.Repositories
-	// insertion sort implementation
-	index := sort.Search(len(rs), func(i int) bool { return git.Less(r, rs[i]) })
+	less := gui.newRepositoryComesBefore(r)
+	index := sort.Search(len(rs), func(i int) bool { return less(rs[i]) })
 	rs = append(rs, &git.Repository{})
 	copy(rs[index+1:], rs[index:])
 	rs[index] = r
 	// add listener
 	r.On(git.RepositoryUpdated, gui.repositoryUpdated)
 	r.On(git.BranchUpdated, gui.branchUpdated)
+	gui.State.Repositories = rs
 	// update gui
 	_ = gui.repositoryUpdated(nil)
 	_ = gui.renderTitle()
-	// take pointer back
-	gui.State.Repositories = rs
 	go func() {
 		if <-loaded {
 			v, err := gui.g.View(mainViewFrameFeature.Name)
 			if err != nil {
 				return
 			}
-			v.Title = mainViewFrameFeature.Title + fmt.Sprintf("(%d) ", len(gui.State.Repositories))
+			v.Title = gui.mainTitle(fmt.Sprintf("%d", len(gui.State.Repositories)))
 		}
 	}()
+}
+
+func (gui *Gui) newRepositoryComesBefore(r *git.Repository) func(*git.Repository) bool {
+	switch gui.State.SortMode {
+	case repositorySortDate:
+		return func(existing *git.Repository) bool {
+			return r.ModTime.Unix() > existing.ModTime.Unix()
+		}
+	case repositorySortName:
+		return func(existing *git.Repository) bool {
+			return git.Less(r, existing)
+		}
+	default:
+		return func(existing *git.Repository) bool {
+			return gui.lessRepository(r, existing)
+		}
+	}
 }
 
 // render title with loaded repository count
@@ -194,8 +228,12 @@ func (gui *Gui) renderTitle() error {
 	if err != nil {
 		return err
 	}
-	v.Title = mainViewFrameFeature.Title + fmt.Sprintf("(%d/%d) ", len(gui.State.Repositories), len(gui.State.Directories))
+	v.Title = gui.mainTitle(fmt.Sprintf("%d/%d", len(gui.State.Repositories), len(gui.State.Directories)))
 	return nil
+}
+
+func (gui *Gui) mainTitle(count string) string {
+	return mainViewFrameFeature.Title + fmt.Sprintf("(%s) sort: %s ", count, gui.State.SortMode)
 }
 
 // set the layout and create views with their default size, name etc. values

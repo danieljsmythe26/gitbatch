@@ -362,11 +362,27 @@ func (gui *Gui) generateKeybindings() error {
 			Vital:       true,
 		}, {
 			View:        mainViewFeature.Name,
+			Key:         'r',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.reloadSelectedRepositoryStatus,
+			Display:     "r",
+			Description: "Refresh",
+			Vital:       true,
+		}, {
+			View:        mainViewFeature.Name,
 			Key:         gocui.KeyCtrlB,
 			Modifier:    gocui.ModNone,
 			Handler:     gui.openBatchBranchView,
 			Display:     "ctrl + b",
 			Description: "Batch branch checkout selection",
+			Vital:       false,
+		}, {
+			View:        mainViewFeature.Name,
+			Key:         's',
+			Modifier:    gocui.ModNone,
+			Handler:     gui.sortBySmart,
+			Display:     "s",
+			Description: "Sort repositories by Smart groups",
 			Vital:       false,
 		}, {
 			View:        mainViewFeature.Name,
